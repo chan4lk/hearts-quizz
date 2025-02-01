@@ -1,70 +1,69 @@
 const express = require('express');
 const cors = require('cors');
-const { createServer } = require('http');
-const { Server } = require('socket.io');
+const http = require('http');
+const setupSocketHandlers = require('./utils/socketHandler');
+const quizRoutes = require('./routes/quizRoutes');
+const authRoutes = require('./routes/authRoutes');
+const Quiz = require('./models/Quiz');
 const path = require('path');
 
-require('dotenv').config();
-
-// Import routes
-const adminRoutes = require('./routes/adminRoutes');
-const quizRoutes = require('./routes/quizRoutes');
-
-// Import models for initialization
-const Admin = require('./models/Admin');
-const Quiz = require('./models/Quiz');
-
-// Import controllers and utils
-const adminController = require('./controllers/adminController');
-const setupSocketHandlers = require('./utils/socketHandler');
-
 const app = express();
+const server = http.createServer(app);
 
-// Middleware
-app.use(cors());
+// CORS configuration
+const allowedOrigins = ['http://localhost:3000', 'http://localhost:5173'];
+app.use(cors({
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true
+}));
+
+// Parse JSON bodies
 app.use(express.json());
 
-// Create HTTP server
-const server = createServer(app);
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api', quizRoutes);
 
-// Setup Socket.IO
-const io = new Server(server, {
+// Socket.io setup
+const io = require('socket.io')(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-    methods: ['GET', 'POST']
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
 
-// Initialize socket handlers
 setupSocketHandlers(io);
-
-// Routes
-app.use('/api/admin', adminRoutes);
-app.use('/api/quiz', quizRoutes);
 
 // Basic health check endpoint
 app.get('/health', (req, res) => {
-  res.status(200).send('Server is healthy');
+  res.json({ status: 'ok' });
 });
 
-// Initialize database and seed admin
-const initializeApp = async () => {
+const PORT = process.env.PORT || 5001;
+
+const startServer = async () => {
   try {
-    // Create tables
-    await Admin.createTable();
+    // Initialize database
     await Quiz.createTable();
     
-    // Seed admin user
-    await adminController.seedAdmin();
-    
-    const port = process.env.PORT || 5001;
-    server.listen(port, () => {
-      console.log(`Server running on port ${port}`);
+    // Start server
+    server.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
     });
-  } catch (err) {
-    console.error('Error initializing app:', err);
+  } catch (error) {
+    console.error('Failed to start server:', error);
     process.exit(1);
   }
 };
 
-initializeApp();
+// Start the server
+startServer();
