@@ -28,7 +28,7 @@ function App() {
           <Routes>
             <Route path="/" element={<HomePage socket={socket} />} />
             <Route path="/quiz/:pin" element={<QuizPage socket={socket} />} />
-            <Route path="/admin" element={<AdminPage />} />
+            <Route path="/admin" element={<AdminPage socket={socket} />} />
           </Routes>
         </div>
       </div>
