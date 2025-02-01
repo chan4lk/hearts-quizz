@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import useSocket from '../hooks/useSocket';
+import axios from 'axios';
+import { API_URL } from '../config/env';
 
 const HostPage = () => {
   const { pin } = useParams();
@@ -14,9 +16,18 @@ const HostPage = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    const fetchQuiz = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/api/quizzes/pin/${pin}`);
+        setQuiz(response.data);
+      } catch (err) {
+        console.error('Error fetching quiz:', err);
+        setError('Failed to load quiz data');
+      }
+    };
+
     if (!quiz) {
-      setError('No quiz data found');
-      return;
+      fetchQuiz();
     }
 
     // Join as admin
@@ -45,9 +56,15 @@ const HostPage = () => {
     });
 
     // Listen for questions
-    socket.on('question', (questionData) => {
-      console.log('Received question:', questionData);
-      setCurrentQuestion(questionData);
+    socket.on('question_start', ({ question }) => {
+      console.log('Received question:', question);
+      setCurrentQuestion(question);
+    });
+
+    // Listen for quiz errors
+    socket.on('quiz_error', ({ message }) => {
+      console.error('Quiz error:', message);
+      setError(message);
     });
 
     // Clean up socket listeners
@@ -55,7 +72,8 @@ const HostPage = () => {
       socket.off('player_joined');
       socket.off('player_left');
       socket.off('quiz_started');
-      socket.off('question');
+      socket.off('question_start');
+      socket.off('quiz_error');
     };
   }, [socket, quiz, pin]);
 
@@ -82,6 +100,29 @@ const HostPage = () => {
             <div className="text-2xl font-semibold text-blue-600">
               PIN: {pin}
             </div>
+          </div>
+
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg text-center">
+            <p className="text-gray-600 mb-2">Share this link with players:</p>
+            <div className="flex items-center justify-center gap-4">
+              <input
+                type="text"
+                value={`${window.location.origin}/join/${pin}`}
+                readOnly
+                className="px-4 py-2 border rounded bg-white text-gray-800 flex-1"
+              />
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/join/${pin}`);
+                }}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                Copy
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-gray-500">
+              Or go to <span className="font-semibold">{window.location.origin}</span> and enter PIN: <span className="font-semibold">{pin}</span>
+            </p>
           </div>
 
           {error && (
@@ -129,7 +170,7 @@ const HostPage = () => {
               {currentQuestion ? (
                 <div className="bg-gray-50 p-6 rounded-lg">
                   <h2 className="text-xl font-semibold mb-4">
-                    Question {currentQuestion.number} of {quiz.questions.length}
+                    Question {currentQuestion.number} of {quiz?.questions?.length || 0}
                   </h2>
                   <p className="text-lg mb-4">{currentQuestion.text}</p>
                   {currentQuestion.image && (

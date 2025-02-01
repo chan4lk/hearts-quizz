@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { SocketProvider } from './hooks/useSocket';
-import { config } from './config/env';
+import { API_URL } from './config/env';
 
 import HomePage from './pages/HomePage';
 import AdminPage from './pages/AdminPage';
@@ -14,7 +14,7 @@ import HostPage from './pages/HostPage';
 function App() {
   return (
     <Router>
-      <SocketProvider url={config.BACKEND_URL}>
+      <SocketProvider url={API_URL}>
         <div className="min-h-screen bg-gray-50">
           <Routes>
             <Route path="/" element={<HomePage />} />

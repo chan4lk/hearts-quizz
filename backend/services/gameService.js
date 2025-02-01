@@ -136,16 +136,19 @@ class GameService {
 
     const question = gameState.questions[gameState.currentQuestion];
     const questionData = {
+      number: gameState.currentQuestion + 1,
+      totalQuestions: gameState.questions.length,
       text: question.text,
       options: question.options,
-      questionNumber: gameState.currentQuestion + 1,
-      totalQuestions: gameState.questions.length,
-      timeLimit: this.QUESTION_TIME_LIMIT
+      image: question.image,
+      timeLimit: this.QUESTION_TIME_LIMIT,
+      timeLeft: this.QUESTION_TIME_LIMIT,
+      correctAnswer: question.correctAnswer
     };
 
     console.log('Starting question:', {
       pin,
-      questionNumber: questionData.questionNumber,
+      questionNumber: questionData.number,
       totalQuestions: questionData.totalQuestions
     });
 

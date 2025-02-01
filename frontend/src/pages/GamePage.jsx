@@ -27,9 +27,9 @@ const GamePage = () => {
     });
 
     // Listen for questions
-    socket.on('question', (questionData) => {
-      console.log('Received question:', questionData);
-      setCurrentQuestion(questionData);
+    socket.on('question_start', ({ question }) => {
+      console.log('Received question:', question);
+      setCurrentQuestion(question);
       setAnswered(false);
     });
 
@@ -44,11 +44,28 @@ const GamePage = () => {
       }
     });
 
+    // Listen for quiz end
+    socket.on('quiz_end', (result) => {
+      console.log('Quiz ended:', result);
+      const finalScore = result.allPlayers.find(p => p.name === playerName)?.score || score;
+      setScore(finalScore);
+      setCurrentQuestion(null);
+      setError('Quiz ended! Final score: ' + finalScore);
+    });
+
+    // Listen for quiz errors
+    socket.on('quiz_error', ({ message }) => {
+      console.error('Quiz error:', message);
+      setError(message);
+    });
+
     // Clean up socket listeners
     return () => {
       socket.off('quiz_started');
-      socket.off('question');
+      socket.off('question_start');
       socket.off('question_end');
+      socket.off('quiz_end');
+      socket.off('quiz_error');
     };
   }, [socket, playerName, navigate]);
 
