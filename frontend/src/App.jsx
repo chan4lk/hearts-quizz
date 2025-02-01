@@ -6,7 +6,7 @@ import HomePage from './pages/HomePage';
 import QuizPage from './pages/QuizPage';
 import AdminPage from './pages/AdminPage';
 
-const socket = io(process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001', {
+const socket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:5001', {
   autoConnect: false
 });
 
@@ -23,11 +23,15 @@ function App() {
 
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<HomePage socket={socket} />} />
-        <Route path="/quiz/:pin" element={<QuizPage socket={socket} />} />
-        <Route path="/admin" element={<AdminPage />} />
-      </Routes>
+      <div className="min-h-screen bg-gray-100">
+        <div className="container mx-auto px-4 py-8">
+          <Routes>
+            <Route path="/" element={<HomePage socket={socket} />} />
+            <Route path="/quiz/:pin" element={<QuizPage socket={socket} />} />
+            <Route path="/admin" element={<AdminPage />} />
+          </Routes>
+        </div>
+      </div>
     </Router>
   );
 }
