@@ -3,7 +3,7 @@ const Quiz = require('../models/Quiz');
 const getAllQuizzes = async (req, res) => {
   try {
     const quizzes = await Quiz.findAll();
-    res.json({ quizzes });
+    res.json(quizzes);
   } catch (error) {
     console.error('Error getting quizzes:', error);
     res.status(500).json({ error: 'Failed to get quizzes' });
@@ -12,13 +12,25 @@ const getAllQuizzes = async (req, res) => {
 
 const createQuiz = async (req, res) => {
   try {
-    const { title, questions } = req.body;
+    const { title, description, category, questions } = req.body;
     
-    if (!title || !questions || !Array.isArray(questions) || questions.length === 0) {
-      return res.status(400).json({ error: 'Invalid quiz data' });
+    if (!title || !description || !category || !questions || !Array.isArray(questions) || questions.length === 0) {
+      return res.status(400).json({ error: 'Invalid quiz data. Title, description, category, and at least one question are required.' });
     }
 
-    const quiz = await Quiz.create({ title, questions });
+    // Validate each question
+    for (const question of questions) {
+      if (!question.text || !question.timeLimit || !question.points || 
+          !Array.isArray(question.options) || question.options.length !== 4 ||
+          question.correctAnswer === undefined || 
+          !question.options.every(option => option.trim() !== '')) {
+        return res.status(400).json({ 
+          error: 'Invalid question data. Each question must have text, timeLimit, points, exactly 4 non-empty options, and a correctAnswer.'
+        });
+      }
+    }
+
+    const quiz = await Quiz.create({ title, description, category, questions });
     res.status(201).json({ quiz });
   } catch (error) {
     console.error('Error creating quiz:', error);

@@ -7,34 +7,41 @@ const setupSocketHandlers = (io) => {
     // Track which room/quiz this socket is in
     let currentPin = null;
 
-    socket.on('join_quiz', async (data) => {
+    socket.on('join_quiz', async (data, callback) => {
       const { pin, playerName } = data;
       console.log('Player joining quiz:', { pin, playerName, socketId: socket.id });
       
-      // Leave previous room if any
-      if (currentPin) {
-        socket.leave(currentPin);
-        // Clean up from previous room
-        const prevPlayers = gameService.handlePlayerLeave(socket, currentPin);
-        if (prevPlayers) {
-          io.to(currentPin).emit('player_joined', { players: prevPlayers });
+      try {
+        // Leave previous room if any
+        if (currentPin) {
+          socket.leave(currentPin);
+          // Clean up from previous room
+          const prevPlayers = gameService.handlePlayerLeave(socket, currentPin);
+          if (prevPlayers) {
+            io.to(currentPin).emit('player_joined', { players: prevPlayers });
+          }
         }
-      }
-      
-      // Join new room
-      socket.join(pin);
-      currentPin = pin;
-      
-      // Skip adding admin to player list
-      if (playerName.toLowerCase() !== 'admin') {
-        const players = gameService.handlePlayerJoin(socket, { pin, playerName });
-        console.log('Current players:', players);
-        // Broadcast to everyone in the room
-        io.to(pin).emit('player_joined', { players });
-      } else {
-        // If admin is joining, send them the current player list
-        const players = gameService.getPlayerList(pin);
-        socket.emit('player_joined', { players });
+        
+        // Join new room
+        socket.join(pin);
+        currentPin = pin;
+        
+        // Skip adding admin to player list
+        if (playerName.toLowerCase() !== 'admin') {
+          const players = gameService.handlePlayerJoin(socket, { pin, playerName });
+          console.log('Current players:', players);
+          // Broadcast to everyone in the room
+          io.to(pin).emit('player_joined', { players });
+          callback({ success: true });
+        } else {
+          // If admin is joining, send them the current player list
+          const players = gameService.getPlayerList(pin);
+          socket.emit('player_joined', { players });
+          callback({ success: true });
+        }
+      } catch (error) {
+        console.error('Error joining quiz:', error);
+        callback({ error: 'Failed to join quiz' });
       }
     });
 

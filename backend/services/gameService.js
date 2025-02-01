@@ -272,7 +272,8 @@ class GameService {
     if (!this.playerScores.has(pin)) {
       return [];
     }
-    return Array.from(this.playerScores.get(pin).keys());
+    return Array.from(this.playerScores.get(pin).keys())
+      .map(playerName => ({ name: playerName }));
   }
 }
 

@@ -1,38 +1,32 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { io } from 'socket.io-client';
+import { SocketProvider } from './hooks/useSocket';
+import { config } from './config/env';
 
 import HomePage from './pages/HomePage';
-import QuizPage from './pages/QuizPage';
 import AdminPage from './pages/AdminPage';
-
-const BACKEND_URL = 'http://localhost:5001';
+import AdminLoginPage from './pages/AdminLoginPage';
+import CreateQuizPage from './pages/CreateQuizPage';
+import JoinPage from './pages/JoinPage';
+import GamePage from './pages/GamePage';
+import HostPage from './pages/HostPage';
 
 function App() {
-  const [socket, setSocket] = React.useState(null);
-
-  useEffect(() => {
-    const newSocket = io(BACKEND_URL);
-    setSocket(newSocket);
-
-    return () => newSocket.close();
-  }, []);
-
-  if (!socket) {
-    return <div>Connecting to server...</div>;
-  }
-
   return (
     <Router>
-      <div className="min-h-screen bg-gray-100">
-        <div className="container mx-auto px-4 py-8">
+      <SocketProvider url={config.BACKEND_URL}>
+        <div className="min-h-screen bg-gray-50">
           <Routes>
-            <Route path="/" element={<HomePage socket={socket} />} />
-            <Route path="/admin" element={<AdminPage socket={socket} />} />
-            <Route path="/quiz/:pin" element={<QuizPage socket={socket} />} />
+            <Route path="/" element={<HomePage />} />
+            <Route path="/admin" element={<AdminPage />} />
+            <Route path="/admin/login" element={<AdminLoginPage />} />
+            <Route path="/create-quiz" element={<CreateQuizPage />} />
+            <Route path="/join/:pin" element={<JoinPage />} />
+            <Route path="/game/:pin" element={<GamePage />} />
+            <Route path="/host/:pin" element={<HostPage />} />
           </Routes>
         </div>
-      </div>
+      </SocketProvider>
     </Router>
   );
 }
