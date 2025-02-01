@@ -117,7 +117,7 @@ const AdminPage = () => {
                       {quiz.title}
                     </h3>
                     <p className="text-sm text-gray-600">
-                      {quiz.questions?.length || 0} questions
+                      {quiz.question_count} questions
                     </p>
                   </div>
                   <div className="flex items-center space-x-4">
