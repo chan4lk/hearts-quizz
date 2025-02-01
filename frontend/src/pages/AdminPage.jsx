@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 function AdminPage() {
   const navigate = useNavigate();
@@ -13,14 +14,30 @@ function AdminPage() {
     options: ['', '', '', ''],
     correctAnswer: 0
   });
+  const [error, setError] = useState('');
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    // Implement login logic
-    setIsLoggedIn(true);
+    try {
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/login`, {
+        username: e.target.username.value,
+        password: e.target.password.value
+      });
+      if (response.data.success) {
+        setIsLoggedIn(true);
+        setError('');
+      }
+    } catch (err) {
+      setError('Invalid credentials');
+      console.error('Login error:', err);
+    }
   };
 
   const handleAddQuestion = () => {
+    if (!currentQuestion.text || currentQuestion.options.some(opt => !opt)) {
+      setError('Please fill in all question fields');
+      return;
+    }
     setQuizData((prev) => ({
       ...prev,
       questions: [...prev.questions, currentQuestion]
@@ -30,11 +47,34 @@ function AdminPage() {
       options: ['', '', '', ''],
       correctAnswer: 0
     });
+    setError('');
   };
 
   const handleCreateQuiz = async () => {
-    // Implement quiz creation logic
-    navigate('/');
+    try {
+      if (!quizData.title || quizData.questions.length === 0) {
+        setError('Please add a title and at least one question');
+        return;
+      }
+
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/quiz/create`, quizData);
+      
+      if (response.data.success) {
+        navigate('/');
+      } else {
+        setError('Failed to create quiz');
+      }
+    } catch (err) {
+      setError('Error creating quiz');
+      console.error('Quiz creation error:', err);
+    }
+  };
+
+  const handleOptionChange = (index, value) => {
+    setCurrentQuestion(prev => ({
+      ...prev,
+      options: prev.options.map((opt, i) => i === index ? value : opt)
+    }));
   };
 
   if (!isLoggedIn) {
@@ -42,22 +82,25 @@ function AdminPage() {
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
         <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
           <h2 className="text-2xl font-semibold mb-6 text-gray-800">Admin Login</h2>
+          {error && <p className="text-red-500 mb-4">{error}</p>}
           <form onSubmit={handleLogin} className="space-y-4">
             <input
               type="text"
+              name="username"
               placeholder="Username"
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
             <input
               type="password"
+              name="password"
               placeholder="Password"
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+              className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors"
             >
               Login
             </button>
@@ -69,89 +112,82 @@ function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-4">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8 text-blue-600">Quiz Management</h1>
-
-        {/* Quiz Title */}
-        <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800">Quiz Title</h2>
+      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6">
+        <h1 className="text-3xl font-semibold mb-6">Create Quiz</h1>
+        {error && <p className="text-red-500 mb-4">{error}</p>}
+        
+        <div className="mb-6">
           <input
             type="text"
+            placeholder="Quiz Title"
             value={quizData.title}
-            onChange={(e) => setQuizData({...quizData, title: e.target.value})}
-            placeholder="Enter quiz title"
+            onChange={(e) => setQuizData(prev => ({ ...prev, title: e.target.value }))}
             className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
-        {/* Question Form */}
-        <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800">Add Question</h2>
-          <div className="space-y-4">
-            <textarea
-              value={currentQuestion.text}
-              onChange={(e) => setCurrentQuestion({...currentQuestion, text: e.target.value})}
-              placeholder="Enter question text"
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              rows="3"
-            />
-            {currentQuestion.options.map((option, index) => (
-              <div key={index} className="flex items-center space-x-3">
-                <input
-                  type="radio"
-                  name="correctAnswer"
-                  checked={currentQuestion.correctAnswer === index}
-                  onChange={() => setCurrentQuestion({...currentQuestion, correctAnswer: index})}
-                  className="form-radio h-5 w-5 text-blue-600"
-                />
-                <input
-                  type="text"
-                  value={option}
-                  onChange={(e) => {
-                    const newOptions = [...currentQuestion.options];
-                    newOptions[index] = e.target.value;
-                    setCurrentQuestion({...currentQuestion, options: newOptions});
-                  }}
-                  placeholder={`Option ${index + 1}`}
-                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            ))}
-            <button
-              onClick={handleAddQuestion}
-              className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
-            >
-              Add Question
-            </button>
-          </div>
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold mb-4">Add Question</h2>
+          <input
+            type="text"
+            placeholder="Question Text"
+            value={currentQuestion.text}
+            onChange={(e) => setCurrentQuestion(prev => ({ ...prev, text: e.target.value }))}
+            className="w-full px-4 py-2 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          
+          {currentQuestion.options.map((option, index) => (
+            <div key={index} className="mb-2 flex gap-2">
+              <input
+                type="text"
+                placeholder={`Option ${index + 1}`}
+                value={option}
+                onChange={(e) => handleOptionChange(index, e.target.value)}
+                className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                type="button"
+                onClick={() => setCurrentQuestion(prev => ({ ...prev, correctAnswer: index }))}
+                className={`px-4 py-2 rounded-lg ${
+                  currentQuestion.correctAnswer === index
+                    ? 'bg-green-500 text-white'
+                    : 'bg-gray-200 text-gray-700'
+                }`}
+              >
+                Correct
+              </button>
+            </div>
+          ))}
+          
+          <button
+            onClick={handleAddQuestion}
+            className="mt-4 bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            Add Question
+          </button>
         </div>
 
-        {/* Quiz Preview */}
-        <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800">Quiz Preview</h2>
-          <div className="space-y-4">
-            {quizData.questions.map((question, index) => (
-              <div key={index} className="p-4 bg-gray-50 rounded-lg">
-                <p className="text-lg font-medium mb-2">{question.text}</p>
-                <div className="space-y-2">
-                  {question.options.map((option, i) => (
-                    <div key={i} className="flex items-center space-x-2">
-                      <span className={`w-4 h-4 rounded-full border ${
-                        i === question.correctAnswer ? 'border-green-500 bg-green-100' : 'border-gray-300'
-                      }`}></span>
-                      <span>{option}</span>
-                    </div>
+        {quizData.questions.length > 0 && (
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold mb-4">Questions Added ({quizData.questions.length})</h2>
+            {quizData.questions.map((q, index) => (
+              <div key={index} className="mb-4 p-4 bg-gray-50 rounded-lg">
+                <p className="font-semibold">{q.text}</p>
+                <ul className="ml-4">
+                  {q.options.map((opt, i) => (
+                    <li key={i} className={i === q.correctAnswer ? 'text-green-600 font-semibold' : ''}>
+                      {opt}
+                    </li>
                   ))}
-                </div>
+                </ul>
               </div>
             ))}
           </div>
-        </div>
+        )}
 
-        {/* Create Quiz Button */}
         <button
           onClick={handleCreateQuiz}
-          className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+          className="w-full bg-green-500 text-white py-3 rounded-lg hover:bg-green-600 transition-colors"
         >
           Create Quiz
         </button>
