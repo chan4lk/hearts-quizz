@@ -1,76 +1,128 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import useSocket from '../hooks/useSocket';
+import axios from 'axios';
+import { API_URL } from '../config/env';
 
-function JoinPage() {
-  const [playerName, setPlayerName] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+const JoinPage = () => {
   const navigate = useNavigate();
-  const socket = useSocket();
-  const { pin } = useParams();
+  const { pin: urlPin } = useParams();
+  const [pin, setPin] = useState(urlPin || '');
+  const [name, setName] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleJoinGame = () => {
-    if (!playerName.trim()) {
-      setError('Please enter your name');
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    // Validate input
+    const cleanPin = pin.trim();
+    const cleanName = name.trim();
+
+    if (!cleanPin || !cleanName) {
+      setError('Please enter both PIN and name');
+      setIsLoading(false);
       return;
     }
 
-    setError('');
-    setLoading(true);
-    const cleanName = playerName.trim();
+    if (cleanName.toLowerCase() === 'admin') {
+      setError('Cannot use "admin" as a player name');
+      setIsLoading(false);
+      return;
+    }
 
-    socket.emit('join_quiz', { pin, playerName: cleanName }, (response) => {
-      setLoading(false);
-      if (response?.error) {
-        setError(response.error);
-      } else if (response?.success) {
-        navigate(`/game/${pin}`, { 
-          state: { playerName: cleanName } 
+    try {
+      // First verify the quiz exists
+      const response = await axios.get(`${API_URL}/api/quizzes/pin/${cleanPin}`);
+      if (response.data) {
+        // Navigate to game page with player info
+        navigate(`/game/${cleanPin}`, { 
+          state: { 
+            playerName: cleanName,
+            quiz: response.data
+          }
         });
-      } else {
-        setError('Failed to join game. Please try again.');
       }
-    });
+    } catch (err) {
+      console.error('Error joining quiz:', err);
+      if (err.response?.status === 404) {
+        setError('Quiz not found. Please check the PIN.');
+      } else {
+        setError('Failed to join quiz. Please try again.');
+      }
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h2 className="text-2xl font-semibold mb-6 text-center text-gray-800">
-          Join Game <span className="text-blue-600">{pin}</span>
-        </h2>
-        {error && (
-          <div className="mb-4 p-2 bg-red-100 text-red-600 rounded">
-            {error}
-          </div>
-        )}
-        <div className="space-y-4">
-          <input
-            type="text"
-            value={playerName}
-            onChange={(e) => setPlayerName(e.target.value)}
-            placeholder="Enter your name"
-            maxLength={20}
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={loading}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                handleJoinGame();
-              }
-            }}
-          />
-          <button
-            onClick={handleJoinGame}
-            className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors disabled:bg-blue-300"
-            disabled={loading}
-          >
-            {loading ? 'Joining...' : 'Join Game'}
-          </button>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="max-w-md w-full">
+        <div className="bg-white rounded-lg shadow-md p-8">
+          <h1 className="text-3xl font-bold text-center text-gray-800 mb-8">
+            Join Quiz
+          </h1>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label
+                htmlFor="pin"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Game PIN
+              </label>
+              <input
+                id="pin"
+                type="text"
+                value={pin}
+                onChange={(e) => setPin(e.target.value.trim())}
+                placeholder="Enter game PIN"
+                className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={isLoading}
+                required
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="name"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Your Name
+              </label>
+              <input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter your name"
+                className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={isLoading}
+                required
+                maxLength={20}
+              />
+            </div>
+
+            {error && (
+              <div className="text-red-600 text-sm text-center">{error}</div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className={`w-full py-3 px-6 rounded-md text-white transition-colors ${
+                isLoading
+                  ? 'bg-blue-400 cursor-not-allowed'
+                  : 'bg-blue-500 hover:bg-blue-600'
+              }`}
+            >
+              {isLoading ? 'Joining...' : 'Join Game'}
+            </button>
+          </form>
         </div>
       </div>
     </div>
   );
-}
+};
 
 export default JoinPage;

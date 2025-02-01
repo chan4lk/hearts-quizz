@@ -2,11 +2,98 @@ const Quiz = require('../models/Quiz');
 
 class GameService {
   constructor() {
-    this.gameStates = new Map(); // Store game states by pin
-    this.playerScores = new Map(); // Store player scores by pin
-    this.questionTimers = new Map(); // Store question timers by pin
-    this.playerSockets = new Map(); // Store socket IDs for players
-    this.QUESTION_TIME_LIMIT = 20; // 20 seconds per question
+    this.gameStates = new Map();
+    this.questionTimers = new Map();
+    this.QUESTION_TIME_LIMIT = 20; // seconds
+    this.playerSockets = new Map();
+    this.playerScores = new Map();
+  }
+
+  initializeQuiz(pin, initialState) {
+    console.log('Initializing quiz:', { pin, state: initialState });
+    
+    // Convert questions array to proper format if needed
+    const formattedQuestions = initialState.questions.map(q => ({
+      ...q,
+      timeLimit: this.QUESTION_TIME_LIMIT
+    }));
+
+    const gameState = {
+      ...initialState,
+      questions: formattedQuestions,
+      scores: new Map(),
+      answers: new Map(),
+      isActive: false,
+      currentQuestion: -1,
+      totalPlayers: 0
+    };
+
+    this.gameStates.set(pin, gameState);
+    return gameState;
+  }
+
+  getGameState(pin) {
+    const gameState = this.gameStates.get(pin);
+    console.log('Getting game state:', { pin, exists: !!gameState });
+    return gameState;
+  }
+
+  joinQuiz(pin, playerName) {
+    console.log('Joining quiz:', { pin, playerName });
+    
+    const gameState = this.getGameState(pin);
+    if (!gameState) {
+      console.error('No game found for pin:', pin);
+      return { success: false, error: 'Game not found' };
+    }
+
+    // Skip adding admin to scores
+    if (playerName !== 'admin') {
+      gameState.scores.set(playerName, 0);
+      gameState.totalPlayers++;
+    }
+
+    // Get current player list (excluding admin)
+    const players = Array.from(gameState.scores.keys());
+    console.log('Current players:', players);
+
+    return {
+      success: true,
+      players
+    };
+  }
+
+  startQuiz(pin) {
+    console.log('Starting quiz:', pin);
+    const gameState = this.getGameState(pin);
+    if (!gameState) {
+      console.error('No game found for pin:', pin);
+      return null;
+    }
+
+    if (gameState.isActive) {
+      console.error('Quiz already active:', pin);
+      return null;
+    }
+
+    gameState.isActive = true;
+    gameState.currentQuestion = -1;
+
+    // Start with first question
+    return this.nextQuestion(pin);
+  }
+
+  cleanupQuiz(pin) {
+    console.log('Cleaning up quiz:', pin);
+    
+    // Clear any existing timers
+    if (this.questionTimers.has(pin)) {
+      clearTimeout(this.questionTimers.get(pin));
+      this.questionTimers.delete(pin);
+    }
+    
+    // Remove game state
+    this.gameStates.delete(pin);
   }
 
   handlePlayerJoin(socket, { pin, playerName }) {
@@ -76,19 +163,6 @@ class GameService {
     return null;
   }
 
-  cleanupQuiz(pin) {
-    console.log('Cleaning up quiz:', pin);
-    // Clear timers
-    if (this.questionTimers.has(pin)) {
-      clearTimeout(this.questionTimers.get(pin));
-      this.questionTimers.delete(pin);
-    }
-    // Clear game state
-    this.gameStates.delete(pin);
-    // Clear player scores
-    this.playerScores.delete(pin);
-  }
-
   async startQuiz(pin) {
     try {
       console.log('Starting quiz:', pin);
@@ -120,11 +194,60 @@ class GameService {
       });
 
       // Start first question
-      return this.startQuestion(pin);
+      return this.nextQuestion(pin);
     } catch (err) {
       console.error('Error starting quiz:', err);
       return null;
     }
+  }
+
+  nextQuestion(pin) {
+    const gameState = this.gameStates.get(pin);
+    if (!gameState || !gameState.isActive) {
+      console.error('Invalid game state for pin:', pin);
+      return null;
+    }
+
+    gameState.currentQuestion++;
+    if (gameState.currentQuestion >= gameState.questions.length) {
+      console.log('Quiz is over');
+      return { isOver: true, leaderboard: Array.from(gameState.scores.entries()).map(([name, score]) => ({ name, score })) };
+    }
+
+    // Get the next question
+    const question = gameState.questions[gameState.currentQuestion];
+    
+    // Base question data for all players
+    const baseQuestionData = {
+      number: gameState.currentQuestion + 1,
+      totalQuestions: gameState.questions.length,
+      text: question.text,
+      options: question.options,
+      image: question.image,
+      timeLimit: this.QUESTION_TIME_LIMIT,
+      timeLeft: this.QUESTION_TIME_LIMIT
+    };
+
+    // Add correct answer only for admin
+    const adminQuestionData = {
+      ...baseQuestionData,
+      correctAnswer: question.correctAnswer
+    };
+
+    // Clear previous answers
+    gameState.answers.set(gameState.currentQuestion, new Map());
+
+    // Clear previous timer if exists
+    if (this.questionTimers.has(pin)) {
+      clearTimeout(this.questionTimers.get(pin));
+    }
+
+    // Set timer for question end
+    this.questionTimers.set(pin, setTimeout(() => {
+      this.endQuestion(pin);
+    }, this.QUESTION_TIME_LIMIT * 1000));
+
+    return { playerData: baseQuestionData, adminData: adminQuestionData };
   }
 
   startQuestion(pin) {
@@ -135,21 +258,28 @@ class GameService {
     }
 
     const question = gameState.questions[gameState.currentQuestion];
-    const questionData = {
+    
+    // Base question data for all players
+    const baseQuestionData = {
       number: gameState.currentQuestion + 1,
       totalQuestions: gameState.questions.length,
       text: question.text,
       options: question.options,
       image: question.image,
       timeLimit: this.QUESTION_TIME_LIMIT,
-      timeLeft: this.QUESTION_TIME_LIMIT,
+      timeLeft: this.QUESTION_TIME_LIMIT
+    };
+
+    // Add correct answer only for admin
+    const adminQuestionData = {
+      ...baseQuestionData,
       correctAnswer: question.correctAnswer
     };
 
     console.log('Starting question:', {
       pin,
-      questionNumber: questionData.number,
-      totalQuestions: questionData.totalQuestions
+      questionNumber: baseQuestionData.number,
+      totalQuestions: baseQuestionData.totalQuestions
     });
 
     // Clear previous answers
@@ -165,7 +295,7 @@ class GameService {
       this.endQuestion(pin);
     }, this.QUESTION_TIME_LIMIT * 1000));
 
-    return questionData;
+    return { playerData: baseQuestionData, adminData: adminQuestionData };
   }
 
   submitAnswer(pin, playerName, answer, timeLeft) {
@@ -179,8 +309,8 @@ class GameService {
     const score = isCorrect ? Math.round(timeLeft * 1000 / this.QUESTION_TIME_LIMIT) : 0;
     
     // Update player's score
-    const currentScore = this.playerScores.get(pin).get(playerName) || 0;
-    this.playerScores.get(pin).set(playerName, currentScore + score);
+    const currentScore = gameState.scores.get(playerName) || 0;
+    gameState.scores.set(playerName, currentScore + score);
 
     // Record answer
     if (!gameState.answers.has(gameState.currentQuestion)) {
@@ -207,9 +337,38 @@ class GameService {
   }
 
   endQuestion(pin) {
-    console.log('Question ended:', pin);
-    const result = this.getQuestionEndData(pin);
-    return result;
+    const gameState = this.gameStates.get(pin);
+    if (!gameState || !gameState.isActive) {
+      console.error('Invalid game state for pin:', pin);
+      return null;
+    }
+
+    // Clear the timer
+    if (this.questionTimers.has(pin)) {
+      clearTimeout(this.questionTimers.get(pin));
+      this.questionTimers.delete(pin);
+    }
+
+    const currentAnswers = gameState.answers.get(gameState.currentQuestion) || new Map();
+    const correctAnswer = gameState.questions[gameState.currentQuestion].correctAnswer;
+
+    // Calculate scores for this question
+    for (const [playerName, answer] of currentAnswers.entries()) {
+      if (answer.answer === correctAnswer) {
+        const timeBonus = Math.floor(answer.timeLeft / 2);
+        const score = 100 + timeBonus;
+        const currentScore = gameState.scores.get(playerName) || 0;
+        gameState.scores.set(playerName, currentScore + score);
+      }
+    }
+
+    // Return results including the correct answer
+    return {
+      correctAnswer,
+      leaderboard: Array.from(gameState.scores.entries())
+        .map(([name, score]) => ({ name, score }))
+        .sort((a, b) => b.score - a.score)
+    };
   }
 
   getQuestionEndData(pin) {
@@ -228,7 +387,7 @@ class GameService {
     });
 
     // Get current leaderboard
-    const leaderboard = Array.from(this.playerScores.get(pin).entries())
+    const leaderboard = Array.from(gameState.scores.entries())
       .map(([name, score]) => ({ name, score }))
       .sort((a, b) => b.score - a.score)
       .slice(0, 5);
@@ -240,43 +399,41 @@ class GameService {
     };
   }
 
-  nextQuestion(pin) {
-    const gameState = this.gameStates.get(pin);
-    if (!gameState || !gameState.isActive) return null;
-
-    gameState.currentQuestion++;
-
-    if (gameState.currentQuestion >= gameState.questions.length) {
-      console.log('Quiz ended:', pin);
-      // Quiz is over, send final results
-      const winners = Array.from(this.playerScores.get(pin).entries())
-        .map(([name, score]) => ({ name, score }))
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 3);
-
-      const allPlayers = Array.from(this.playerScores.get(pin).entries())
-        .map(([name, score]) => ({ name, score }))
-        .sort((a, b) => b.score - a.score);
-
-      // Clean up the quiz
-      this.cleanupQuiz(pin);
-
-      return {
-        isOver: true,
-        winners,
-        allPlayers
-      };
-    }
-
-    return this.startQuestion(pin);
-  }
-
   getPlayerList(pin) {
     if (!this.playerScores.has(pin)) {
       return [];
     }
     return Array.from(this.playerScores.get(pin).keys())
       .map(playerName => ({ name: playerName }));
+  }
+
+  registerSocket(socketId, pin, playerName) {
+    this.playerSockets.set(socketId, { pin, name: playerName });
+  }
+
+  handleDisconnect(socketId) {
+    const playerData = this.playerSockets.get(socketId);
+    if (playerData) {
+      const { pin, name } = playerData;
+      console.log('Player disconnecting:', { pin, name, socketId });
+      
+      // Remove player from scores
+      if (this.playerScores.has(pin)) {
+        this.playerScores.get(pin).delete(name);
+        
+        // Clean up quiz if no players left
+        if (this.playerScores.get(pin).size === 0) {
+          this.cleanupQuiz(pin);
+        }
+      }
+      
+      // Remove socket mapping
+      this.playerSockets.delete(socketId);
+      
+      // Return updated player list
+      return this.getPlayerList(pin);
+    }
+    return null;
   }
 }
 

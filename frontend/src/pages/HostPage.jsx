@@ -14,12 +14,17 @@ const HostPage = () => {
   const [currentQuestion, setCurrentQuestion] = useState(null);
   const [gameStarted, setGameStarted] = useState(false);
   const [error, setError] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [leaderboard, setLeaderboard] = useState(null);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
 
   useEffect(() => {
     const fetchQuiz = async () => {
       try {
         const response = await axios.get(`${API_URL}/api/quizzes/pin/${pin}`);
         setQuiz(response.data);
+        // Join as admin after quiz is fetched
+        socket.emit('join_quiz', { pin, playerName: 'admin' });
       } catch (err) {
         console.error('Error fetching quiz:', err);
         setError('Failed to load quiz data');
@@ -30,41 +35,46 @@ const HostPage = () => {
       fetchQuiz();
     }
 
-    // Join as admin
-    socket.emit('join_quiz', { pin, playerName: 'admin' }, (response) => {
-      if (response?.error) {
-        setError(response.error);
-      }
-    });
-
     // Listen for player join events
     socket.on('player_joined', ({ players }) => {
       console.log('Players updated:', players);
-      setPlayers(players || []);
+      setPlayers(Array.isArray(players) ? players : []);
     });
 
     // Listen for player leave events
     socket.on('player_left', ({ players }) => {
       console.log('Players updated after leave:', players);
-      setPlayers(players || []);
+      setPlayers(Array.isArray(players) ? players : []);
     });
 
     // Listen for quiz start
     socket.on('quiz_started', () => {
       console.log('Quiz started');
       setGameStarted(true);
+      setShowLeaderboard(false);
     });
 
     // Listen for questions
     socket.on('question_start', ({ question }) => {
       console.log('Received question:', question);
       setCurrentQuestion(question);
+      setTimeLeft(question.timeLimit);
+      setShowLeaderboard(false);
+    });
+
+    // Listen for question results
+    socket.on('question_end', (result) => {
+      console.log('Question ended:', result);
+      setShowLeaderboard(true);
+      setLeaderboard(result.leaderboard);
     });
 
     // Listen for quiz errors
     socket.on('quiz_error', ({ message }) => {
       console.error('Quiz error:', message);
       setError(message);
+      // Clear error after 5 seconds
+      setTimeout(() => setError(null), 5000);
     });
 
     // Clean up socket listeners
@@ -73,9 +83,27 @@ const HostPage = () => {
       socket.off('player_left');
       socket.off('quiz_started');
       socket.off('question_start');
+      socket.off('question_end');
       socket.off('quiz_error');
     };
   }, [socket, quiz, pin]);
+
+  // Timer effect
+  useEffect(() => {
+    let timer;
+    if (currentQuestion && timeLeft > 0 && !showLeaderboard) {
+      timer = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [currentQuestion, timeLeft, showLeaderboard]);
 
   const handleStartGame = () => {
     if (players.length === 0) {
@@ -92,7 +120,7 @@ const HostPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold text-gray-800">
               Hosting: {quiz?.title}
@@ -105,23 +133,25 @@ const HostPage = () => {
           <div className="mb-6 p-4 bg-gray-50 rounded-lg text-center">
             <p className="text-gray-600 mb-2">Share this link with players:</p>
             <div className="flex items-center justify-center gap-4">
-              <input
-                type="text"
-                value={`${window.location.origin}/join/${pin}`}
-                readOnly
-                className="px-4 py-2 border rounded bg-white text-gray-800 flex-1"
-              />
+              <a
+                href={`${window.location.origin}/join/${pin}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 border rounded bg-white text-blue-600 hover:text-blue-800 flex-1 truncate hover:underline"
+              >
+                {`${window.location.origin}/join/${pin}`}
+              </a>
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(`${window.location.origin}/join/${pin}`);
                 }}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 whitespace-nowrap"
               >
-                Copy
+                Copy Link
               </button>
             </div>
             <p className="mt-2 text-sm text-gray-500">
-              Or go to <span className="font-semibold">{window.location.origin}</span> and enter PIN: <span className="font-semibold">{pin}</span>
+              Or go to <a href={window.location.origin} target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-600 hover:text-blue-800 hover:underline">{window.location.origin}</a> and enter PIN: <span className="font-semibold">{pin}</span>
             </p>
           </div>
 
@@ -167,11 +197,48 @@ const HostPage = () => {
             </>
           ) : (
             <div className="space-y-6">
-              {currentQuestion ? (
+              {showLeaderboard && leaderboard ? (
+                <div>
+                  <h2 className="text-2xl font-bold text-center mb-6">Leaderboard</h2>
+                  <div className="space-y-4">
+                    {leaderboard.map((player, index) => (
+                      <div
+                        key={player.name}
+                        className="flex justify-between items-center p-4 bg-gray-50 rounded-lg"
+                      >
+                        <div className="flex items-center">
+                          <span className="text-2xl font-bold mr-4">#{index + 1}</span>
+                          <span className="text-lg">{player.name}</span>
+                        </div>
+                        <span className="text-xl font-semibold">{player.score}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    onClick={handleNextQuestion}
+                    className="mt-6 w-full bg-blue-500 text-white py-3 px-6 rounded-lg hover:bg-blue-600"
+                  >
+                    Next Question
+                  </button>
+                </div>
+              ) : currentQuestion ? (
                 <div className="bg-gray-50 p-6 rounded-lg">
-                  <h2 className="text-xl font-semibold mb-4">
-                    Question {currentQuestion.number} of {quiz?.questions?.length || 0}
-                  </h2>
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-semibold">
+                      Question {currentQuestion.number} of {quiz?.questions?.length || 0}
+                    </h2>
+                    <div className="text-2xl font-bold text-blue-600">
+                      {timeLeft}s
+                    </div>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5 mb-6">
+                    <div
+                      className="bg-blue-600 h-2.5 rounded-full transition-all duration-1000"
+                      style={{
+                        width: `${(timeLeft / currentQuestion.timeLimit) * 100}%`,
+                      }}
+                    ></div>
+                  </div>
                   <p className="text-lg mb-4">{currentQuestion.text}</p>
                   {currentQuestion.image && (
                     <img
@@ -184,18 +251,25 @@ const HostPage = () => {
                     {currentQuestion.options.map((option, index) => (
                       <div
                         key={index}
-                        className="bg-white p-4 rounded-lg shadow text-center"
+                        className={`p-4 rounded-lg shadow text-center ${
+                          index === currentQuestion.correctAnswer
+                            ? 'bg-purple-100 border-2 border-purple-500'
+                            : 'bg-white'
+                        }`}
                       >
-                        {option}
+                        <div className={`text-lg ${
+                          index === currentQuestion.correctAnswer
+                            ? 'text-purple-800 font-bold'
+                            : ''
+                        }`}>{option}</div>
+                        {index === currentQuestion.correctAnswer && (
+                          <div className="text-sm text-purple-600 mt-2 font-semibold">
+                            ★ Correct Answer ★
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
-                  <button
-                    onClick={handleNextQuestion}
-                    className="mt-6 w-full bg-blue-500 text-white py-3 px-6 rounded-lg hover:bg-blue-600"
-                  >
-                    Next Question
-                  </button>
                 </div>
               ) : (
                 <div className="text-center text-lg text-blue-600 font-semibold">

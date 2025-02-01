@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { SocketProvider } from './hooks/useSocket';
 import { API_URL } from './config/env';
 
@@ -18,12 +18,14 @@ function App() {
         <div className="min-h-screen bg-gray-50">
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/admin" element={<AdminPage />} />
-            <Route path="/admin/login" element={<AdminLoginPage />} />
-            <Route path="/create-quiz" element={<CreateQuizPage />} />
+            <Route path="/join" element={<JoinPage />} />
             <Route path="/join/:pin" element={<JoinPage />} />
             <Route path="/game/:pin" element={<GamePage />} />
+            <Route path="/admin" element={<AdminPage />} />
+            <Route path="/admin/login" element={<AdminLoginPage />} />
             <Route path="/host/:pin" element={<HostPage />} />
+            <Route path="/create-quiz" element={<CreateQuizPage />} />
+            <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </div>
       </SocketProvider>
