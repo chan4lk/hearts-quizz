@@ -8,6 +8,11 @@ class GameService {
     this.QUESTION_TIME_LIMIT = 20; // seconds
     this.playerSockets = new Map();
     this.playerScores = new Map();
+    
+    // Restore game states when service is initialized
+    this.restoreGameStates().catch(err => {
+      console.error('Failed to restore game states:', err);
+    });
   }
 
   async initializeQuiz(pin, initialState) {
@@ -399,6 +404,31 @@ class GameService {
     // Remove game state
     this.gameStates.delete(pin);
     await gameStateService.removeGameState(pin);
+  }
+
+  async restoreGameStates() {
+    try {
+      // Get all active game states from the database using gameStateService
+      const allStates = await gameStateService.getAllGameStates();
+      
+      if (!allStates) {
+        console.log('No game states to restore');
+        return;
+      }
+      
+      // Restore each game state to memory
+      for (const gameState of allStates) {
+        const pin = gameState.pin;
+        // Restore to memory
+        this.gameStates.set(pin, gameState);
+        console.log(`Restored game state for pin ${pin}`);
+      }
+      
+      console.log(`Restored ${allStates.length} game states`);
+    } catch (err) {
+      console.error('Error restoring game states:', err);
+      throw err;
+    }
   }
 }
 

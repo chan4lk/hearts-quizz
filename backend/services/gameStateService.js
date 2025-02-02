@@ -81,6 +81,37 @@ class GameStateService {
       [hoursOld]
     );
   }
+
+  async getAllGameStates() {
+    await this.ensureInitialized();
+    
+    const states = await db.all('SELECT pin, state FROM game_states');
+    if (!states || states.length === 0) return null;
+
+    const gameStates = [];
+    
+    for (const state of states) {
+      const gameState = JSON.parse(state.state);
+      
+      // Load player scores
+      const players = await db.all(
+        'SELECT player_name, score FROM game_players WHERE pin = ?',
+        [state.pin]
+      );
+      
+      // Convert scores back to Map
+      gameState.scores = new Map(
+        players.map(p => [p.player_name, p.score])
+      );
+      
+      // Add pin to the game state
+      gameState.pin = state.pin;
+      
+      gameStates.push(gameState);
+    }
+    
+    return gameStates;
+  }
 }
 
 module.exports = new GameStateService();
