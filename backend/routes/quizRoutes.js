@@ -2,17 +2,18 @@ const express = require('express');
 const router = express.Router();
 const gameService = require('../services/gameService');
 const authMiddleware = require('../middleware/auth');
+const db = require('../db');
 
 // Get quiz by pin
 router.get('/pin/:pin', async (req, res) => {
   try {
-    const quiz = await global.db.get('SELECT * FROM quizzes WHERE pin = ?', [req.params.pin]);
+    const quiz = await db.get('SELECT * FROM quizzes WHERE pin = ?', [req.params.pin]);
     if (!quiz) {
       return res.status(404).json({ error: 'Quiz not found' });
     }
 
     // Get questions for the quiz
-    const questions = await global.db.all('SELECT * FROM questions WHERE quiz_id = ?', [quiz.id]);
+    const questions = await db.all('SELECT * FROM questions WHERE quiz_id = ?', [quiz.id]);
     quiz.questions = questions.map(q => ({
       text: q.text,
       options: JSON.parse(q.options),
@@ -62,7 +63,7 @@ router.post('/', authMiddleware, async (req, res) => {
     const pin = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit pin
 
     // Insert quiz
-    const result = await global.db.run(
+    const result = await db.run(
       'INSERT INTO quizzes (title, pin, user_id) VALUES (?, ?, ?)',
       [title, pin, req.user.id]
     );
@@ -70,15 +71,15 @@ router.post('/', authMiddleware, async (req, res) => {
 
     // Insert questions
     for (const q of questions) {
-      await global.db.run(
+      await db.run(
         'INSERT INTO questions (quiz_id, text, options, correct_answer, image) VALUES (?, ?, ?, ?, ?)',
         [quizId, q.text, JSON.stringify(q.options), q.correctAnswer, q.image]
       );
     }
 
     // Get the created quiz with questions
-    const quiz = await global.db.get('SELECT * FROM quizzes WHERE id = ?', [quizId]);
-    quiz.questions = await global.db.all('SELECT * FROM questions WHERE quiz_id = ?', [quizId]);
+    const quiz = await db.get('SELECT * FROM quizzes WHERE id = ?', [quizId]);
+    quiz.questions = await db.all('SELECT * FROM questions WHERE quiz_id = ?', [quizId]);
     
     // Initialize game state
     gameService.initializeQuiz(pin, {
@@ -104,7 +105,7 @@ router.post('/', authMiddleware, async (req, res) => {
 // Get all quizzes for user
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const quizzes = await global.db.all(
+    const quizzes = await db.all(
       `SELECT q.*, COUNT(qu.id) as question_count 
        FROM quizzes q 
        LEFT JOIN questions qu ON q.id = qu.quiz_id 
@@ -122,7 +123,7 @@ router.get('/', authMiddleware, async (req, res) => {
 // Deactivate a quiz
 router.post('/:pin/deactivate', authMiddleware, async (req, res) => {
   try {
-    const quiz = await global.db.get(
+    const quiz = await db.get(
       'SELECT * FROM quizzes WHERE pin = ? AND user_id = ?',
       [req.params.pin, req.user.id]
     );

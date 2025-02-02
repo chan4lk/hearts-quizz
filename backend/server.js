@@ -4,9 +4,7 @@ const http = require('http');
 const setupSocketHandlers = require('./utils/socketHandler');
 const quizRoutes = require('./routes/quizRoutes');
 const authRoutes = require('./routes/authRoutes');
-const sqlite3 = require('sqlite3');
-const { open } = require('sqlite');
-const path = require('path');
+const db = require('./db');
 require('dotenv').config();
 
 const app = express();
@@ -65,49 +63,14 @@ const PORT = process.env.PORT || 5001;
 const startServer = async () => {
   try {
     // Initialize database
-    const db = await open({
-      filename: path.join(__dirname, 'db', 'database.sqlite'),
-      driver: sqlite3.Database
-    });
+    await db.init();
 
-    // Create tables
-    await db.exec(`
-      CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
-
-      CREATE TABLE IF NOT EXISTS quizzes (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        pin TEXT UNIQUE NOT NULL,
-        user_id INTEGER NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users (id)
-      );
-
-      CREATE TABLE IF NOT EXISTS questions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        quiz_id INTEGER NOT NULL,
-        text TEXT NOT NULL,
-        options TEXT NOT NULL,
-        correct_answer TEXT NOT NULL,
-        image TEXT,
-        FOREIGN KEY (quiz_id) REFERENCES quizzes (id) ON DELETE CASCADE
-      );
-    `);
-
-    // Make db available globally
-    global.db = db;
-    
-    // Start server
+    // Start HTTP server
     server.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+      console.log(`Server is running on port ${PORT}`);
     });
-  } catch (error) {
-    console.error('Failed to start server:', error);
+  } catch (err) {
+    console.error('Failed to start server:', err);
     process.exit(1);
   }
 };

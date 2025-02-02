@@ -1,4 +1,5 @@
 const gameService = require('../services/gameService');
+const db = require('../db');
 
 function socketHandler(io) {
   io.on('connection', (socket) => {
@@ -11,7 +12,7 @@ function socketHandler(io) {
       console.log('Join quiz request:', { pin, playerName });
       try {
         // Get quiz from database
-        const quiz = await global.db.get('SELECT * FROM quizzes WHERE pin = ?', [pin]);
+        const quiz = await db.get('SELECT * FROM quizzes WHERE pin = ?', [pin]);
         if (!quiz) {
           socket.emit('quiz_error', { message: 'Quiz not found' });
           return;
@@ -39,7 +40,7 @@ function socketHandler(io) {
 
         // If player is admin, send full quiz data
         if (playerName === 'admin') {
-          const questions = await global.db.all('SELECT * FROM questions WHERE quiz_id = ?', [quiz.id]);
+          const questions = await db.all('SELECT * FROM questions WHERE quiz_id = ?', [quiz.id]);
           socket.emit('quiz_data', {
             ...quiz,
             questions: questions.map(q => ({
