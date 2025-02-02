@@ -62,7 +62,13 @@ function socketHandler(io) {
       if (gameState) {
         io.to(pin).emit('quiz_started');
         // Start with first question
-        gameService.nextQuestion(pin);
+        const firstQuestion = gameService.nextQuestion(pin);
+        if (firstQuestion) {
+          // Send first question to admin
+          socket.emit('question_start', { question: firstQuestion.adminData });
+          // Send player data to other players
+          socket.to(pin).emit('question_start', { question: firstQuestion.playerData });
+        }
       }
     });
 
@@ -75,7 +81,7 @@ function socketHandler(io) {
         } else {
           // Send admin data to admin socket
           if (socket.isAdmin) {
-            socket.emit('question_start', { question: result.adminData });
+          socket.emit('question_start', { question: result.adminData });
           }
           
           // Send player data to all other sockets in the room
