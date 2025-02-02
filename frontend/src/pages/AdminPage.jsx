@@ -2,14 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../config/env';
-import useSocket from '../hooks/useSocket';
 
 const AdminPage = () => {
   const [quizzes, setQuizzes] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const socket = useSocket();
 
   useEffect(() => {
     const fetchQuizzes = async () => {

@@ -6,7 +6,7 @@ const GamePage = () => {
   const { pin } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const socket = useSocket();
+  const { socket, isConnected } = useSocket();
   const playerName = location.state?.playerName;
   const [currentQuestion, setCurrentQuestion] = useState(null);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
@@ -15,18 +15,16 @@ const GamePage = () => {
   const [leaderboard, setLeaderboard] = useState([]);
   const [timeLeft, setTimeLeft] = useState(null);
   const [error, setError] = useState('');
-  const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
+    console.log('Socket:', socket);
     if (!socket) return;
 
     socket.on('connect', () => {
-      setIsConnected(true);
       console.log('Connected to server');
     });
 
     socket.on('disconnect', () => {
-      setIsConnected(false);
       console.log('Disconnected from server');
     });
 
@@ -37,13 +35,14 @@ const GamePage = () => {
   }, [socket]);
 
   useEffect(() => {
-    if (!isConnected || !playerName || !pin) {
+    if (!socket || !isConnected || !playerName || !pin) {
       return;
     }
 
-    console.log('Joining quiz:', { pin, playerName });
+    console.log('Setting up game socket listeners and joining quiz');
     socket.emit('join_quiz', { pin, playerName });
 
+    // Set up all event listeners
     socket.on('quiz_error', ({ message }) => {
       console.error('Quiz error:', message);
       setError(message);
@@ -52,42 +51,35 @@ const GamePage = () => {
       }, 3000);
     });
 
-    socket.on('player_joined', (data) => {
-      console.log('Player joined:', data);
-    });
-
-    socket.on('quiz_started', () => {
-      console.log('Quiz started');
-      setCurrentQuestion(null);
-      setAnswered(false);
-      setShowLeaderboard(false);
-      setSelectedAnswer(null);
-    });
-
     socket.on('question_start', ({ question, timeLimit }) => {
       console.log('Question started:', question);
       setCurrentQuestion(question);
+      setTimeLeft(timeLimit);
       setAnswered(false);
       setSelectedAnswer(null);
       setShowLeaderboard(false);
-      setTimeLeft(timeLimit);
     });
 
-    socket.on('question_end', ({ correctAnswer, scores }) => {
-      console.log('Question ended:', { correctAnswer, scores });
+    socket.on('question_end', ({ leaderboard }) => {
+      console.log('Question ended, leaderboard:', leaderboard);
+      setLeaderboard(leaderboard);
       setShowLeaderboard(true);
-      const sortedScores = Object.entries(scores)
-        .map(([name, score]) => ({ name, score }))
-        .sort((a, b) => b.score - a.score);
-      setLeaderboard(sortedScores);
     });
 
+    socket.on('quiz_end', ({ finalLeaderboard }) => {
+      console.log('Quiz ended, final leaderboard:', finalLeaderboard);
+      setLeaderboard(finalLeaderboard);
+      setShowLeaderboard(true);
+      setCurrentQuestion(null);
+    });
+
+    // Cleanup function
     return () => {
+      console.log('Cleaning up game socket listeners');
       socket.off('quiz_error');
-      socket.off('player_joined');
-      socket.off('quiz_started');
       socket.off('question_start');
       socket.off('question_end');
+      socket.off('quiz_end');
     };
   }, [socket, isConnected, playerName, pin, navigate]);
 
@@ -137,7 +129,7 @@ const GamePage = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="bg-white p-8 rounded-lg shadow-md">
           <div className="text-gray-600 text-center">
-            Connecting to server...
+            Waiting for connection...
           </div>
         </div>
       </div>

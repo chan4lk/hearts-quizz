@@ -8,7 +8,7 @@ const HostPage = () => {
   const { pin } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const socket = useSocket();
+  const { socket, isConnected } = useSocket();
   const [quiz, setQuiz] = useState(location.state?.quiz);
   const [players, setPlayers] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState(null);
@@ -18,13 +18,14 @@ const HostPage = () => {
   const [leaderboard, setLeaderboard] = useState(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
 
+  // Fetch quiz if not available from location state
   useEffect(() => {
+    if (!isConnected || !socket || !pin) return;
+
     const fetchQuiz = async () => {
       try {
         const response = await axios.get(`${API_URL}/api/quizzes/pin/${pin}`);
         setQuiz(response.data);
-        // Join as admin after quiz is fetched
-        socket.emit('join_quiz', { pin, playerName: 'admin' });
       } catch (err) {
         console.error('Error fetching quiz:', err);
         setError('Failed to load quiz data');
@@ -34,61 +35,89 @@ const HostPage = () => {
     if (!quiz) {
       fetchQuiz();
     }
+  }, [isConnected, socket, pin, quiz]);
 
-    // Listen for player join events
-    socket.on('player_joined', ({ players }) => {
+  // Join as admin
+  useEffect(() => {
+    if (!isConnected || !socket || !pin) return;
+    
+    console.log('Joining as admin:', pin);
+    socket.emit('join_quiz', { pin, playerName: 'admin' });
+  }, [isConnected, socket, pin]);
+
+  useEffect(() => {
+    if (!socket || !isConnected) return;
+
+    const onPlayerJoined = ({ players, playerName }) => {
       console.log('Players updated:', players);
-      setPlayers(Array.isArray(players) ? players : []);
-    });
+      if (Array.isArray(players)) {
+        setPlayers(players);
+      } else if (playerName) {
+        setPlayers(prev => [...prev, playerName]);
+      }
+    };
 
-    // Listen for player leave events
-    socket.on('player_left', ({ players }) => {
+    const onPlayerLeft = ({ players }) => {
       console.log('Players updated after leave:', players);
-      setPlayers(Array.isArray(players) ? players : []);
-    });
+      if (Array.isArray(players)) {
+        setPlayers(players);
+      }
+    };
 
-    // Listen for quiz start
-    socket.on('quiz_started', () => {
+    const onQuizStarted = () => {
       console.log('Quiz started');
       setGameStarted(true);
       setShowLeaderboard(false);
-    });
+    };
 
-    // Listen for questions
-    socket.on('question_start', ({ question }) => {
+    const onQuestionStart = ({ question }) => {
       console.log('Received question:', question);
       setCurrentQuestion(question);
       setTimeLeft(question.timeLimit);
       setShowLeaderboard(false);
-    });
+    };
 
-    // Listen for question results
-    socket.on('question_end', (result) => {
-      console.log('Question ended:', result);
+    const onQuestionEnd = ({ leaderboard }) => {
+      console.log('Question ended, leaderboard:', leaderboard);
+      setLeaderboard(leaderboard);
       setShowLeaderboard(true);
-      setLeaderboard(result.leaderboard);
-    });
+    };
 
-    // Listen for quiz errors
-    socket.on('quiz_error', ({ message }) => {
+    const onQuizEnd = ({ finalLeaderboard }) => {
+      console.log('Quiz ended, final leaderboard:', finalLeaderboard);
+      setLeaderboard(finalLeaderboard);
+      setShowLeaderboard(true);
+      setGameStarted(false);
+      setCurrentQuestion(null);
+    };
+
+    const onQuizError = ({ message }) => {
       console.error('Quiz error:', message);
       setError(message);
-      // Clear error after 5 seconds
-      setTimeout(() => setError(null), 5000);
-    });
-
-    // Clean up socket listeners
-    return () => {
-      socket.off('player_joined');
-      socket.off('player_left');
-      socket.off('quiz_started');
-      socket.off('question_start');
-      socket.off('question_end');
-      socket.off('quiz_error');
     };
-  }, [socket, quiz, pin]);
 
-  // Timer effect
+    console.log('Setting up host socket listeners');
+    
+    socket.on('player_joined', onPlayerJoined);
+    socket.on('player_left', onPlayerLeft);
+    socket.on('quiz_started', onQuizStarted);
+    socket.on('question_start', onQuestionStart);
+    socket.on('question_end', onQuestionEnd);
+    socket.on('quiz_end', onQuizEnd);
+    socket.on('quiz_error', onQuizError);
+
+    return () => {
+      console.log('Cleaning up host socket listeners');
+      socket.off('player_joined', onPlayerJoined);
+      socket.off('player_left', onPlayerLeft);
+      socket.off('quiz_started', onQuizStarted);
+      socket.off('question_start', onQuestionStart);
+      socket.off('question_end', onQuestionEnd);
+      socket.off('quiz_end', onQuizEnd);
+      socket.off('quiz_error', onQuizError);
+    };
+  }, [socket, isConnected]);
+
   useEffect(() => {
     let timer;
     if (currentQuestion && timeLeft > 0 && !showLeaderboard) {
@@ -176,7 +205,9 @@ const HostPage = () => {
                         key={index}
                         className="bg-gray-100 rounded p-3 text-center"
                       >
-                        {player.name}
+                        <span className="text-gray-800 font-medium">
+                          {player.playerName || player}
+                        </span>
                       </div>
                     ))}
                   </div>
