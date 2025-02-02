@@ -34,8 +34,17 @@ const io = require('socket.io')(server, {
   cors: {
     origin: allowedOrigins,
     methods: ["GET", "POST"],
-    credentials: true
-  }
+    credentials: true,
+    allowedHeaders: ["*"]
+  },
+  transports: ['websocket', 'polling'],
+  pingTimeout: 60000,
+  pingInterval: 25000
+});
+
+// Log socket.io events for debugging
+io.engine.on("connection_error", (err) => {
+  console.log("Connection error:", err);
 });
 
 setupSocketHandlers(io);

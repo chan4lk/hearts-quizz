@@ -10,10 +10,26 @@ export const SocketProvider = ({ children, url = 'http://localhost:5001' }) => {
     const newSocket = io(url, {
       transports: ['websocket', 'polling'],
       withCredentials: true,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
     });
+
+    newSocket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+    });
+
+    newSocket.on('connect', () => {
+      console.log('Socket connected successfully');
+    });
+
     setSocket(newSocket);
 
-    return () => newSocket.close();
+    return () => {
+      if (newSocket) {
+        newSocket.close();
+      }
+    };
   }, [url]);
 
   if (!socket) {
