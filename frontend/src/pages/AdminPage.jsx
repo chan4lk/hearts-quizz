@@ -107,7 +107,7 @@ const AdminPage = () => {
             <div className="space-y-4">
               {quizzes.map((quiz) => (
                 <div
-                  key={quiz._id}
+                  key={quiz.id}
                   className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100"
                 >
                   <div>
