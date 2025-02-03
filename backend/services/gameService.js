@@ -166,7 +166,7 @@ class GameService {
     if (!currentQ) return null;
 
     // Record answer and calculate score based on time left
-    const isCorrect = answer === currentQ.correctAnswer;
+    const isCorrect = String(answer) === currentQ.correctAnswer;
     const timeBonus = timeLeft / currentQ.timeLimit; // Time bonus factor (0 to 1)
     const baseScore = 1000; // Base score for correct answer
     const score = isCorrect ? Math.ceil(baseScore * timeBonus) : 0;

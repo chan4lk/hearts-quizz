@@ -52,7 +52,7 @@ const GamePage = () => {
 
     socket.on('show_correct_answer', ({ correctAnswer }) => {
       console.log('Showing correct answer:', correctAnswer);
-      setCorrectAnswer(correctAnswer);
+      setCorrectAnswer(parseInt(correctAnswer));
       setShowCorrectAnswer(true);
     });
 
