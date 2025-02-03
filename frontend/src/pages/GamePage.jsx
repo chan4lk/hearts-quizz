@@ -62,13 +62,13 @@ const GamePage = () => {
 
     socket.on('question_end', ({ leaderboard }) => {
       console.log('Question ended, leaderboard:', leaderboard);
-      setLeaderboard(leaderboard);
+      setLeaderboard(leaderboard || []);
       setShowLeaderboard(true);
     });
 
     socket.on('quiz_end', ({ finalLeaderboard }) => {
       console.log('Quiz ended, final leaderboard:', finalLeaderboard);
-      setLeaderboard(finalLeaderboard);
+      setLeaderboard(finalLeaderboard || []);
       setShowLeaderboard(true);
       setCurrentQuestion(null);
     });
@@ -142,7 +142,7 @@ const GamePage = () => {
         <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
           <h2 className="text-2xl font-bold text-center mb-6">Leaderboard</h2>
           <div className="space-y-4">
-            {leaderboard.map((player, index) => (
+            {(leaderboard || []).map((player, index) => (
               <div
                 key={player.name}
                 className="flex justify-between items-center p-3 bg-gray-50 rounded"

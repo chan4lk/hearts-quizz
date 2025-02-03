@@ -1,5 +1,6 @@
 const Quiz = require('../models/Quiz');
 const gameStateService = require('./gameStateService');
+const db = require('../db'); // assuming db is defined in a separate file
 
 class GameService {
   constructor() {
@@ -57,7 +58,39 @@ class GameService {
   async joinQuiz(pin, playerName) {
     console.log('Joining quiz:', { pin, playerName });
     
-    const gameState = await this.getGameState(pin);
+    let gameState = await this.getGameState(pin);
+    
+    // If admin is joining and no game state exists, initialize it
+    if (!gameState && playerName === 'admin') {
+      console.log('Admin joining, initializing game state');
+      const quiz = await db.get('SELECT * FROM quizzes WHERE pin = ?', [pin]);
+      if (!quiz) {
+        console.error('Quiz not found in database:', pin);
+        return { success: false, error: 'Quiz not found' };
+      }
+
+      const questions = await db.all('SELECT * FROM questions WHERE quiz_id = ?', [quiz.id]);
+      const formattedQuestions = questions.map(q => ({
+        text: q.text,
+        options: JSON.parse(q.options),
+        correctAnswer: q.correct_answer,
+        image: q.image,
+        timeLimit: q.timeLimit || this.QUESTION_TIME_LIMIT
+      }));
+
+      gameState = {
+        questions: formattedQuestions,
+        scores: new Map(),
+        answers: new Map(),
+        isActive: false,
+        currentQuestion: -1,
+        totalPlayers: 0
+      };
+
+      this.gameStates.set(pin, gameState);
+      await gameStateService.saveGameState(pin, gameState);
+    }
+
     if (!gameState) {
       console.error('No game found for pin:', pin);
       return { success: false, error: 'Game not found' };
