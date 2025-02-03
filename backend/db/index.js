@@ -37,6 +37,7 @@ async function init() {
       options TEXT NOT NULL,
       correct_answer TEXT NOT NULL,
       image TEXT,
+      timeLimit INTEGER DEFAULT 30,
       FOREIGN KEY (quiz_id) REFERENCES quizzes (id) ON DELETE CASCADE
     );
 

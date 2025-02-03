@@ -18,7 +18,8 @@ router.get('/pin/:pin', async (req, res) => {
       text: q.text,
       options: JSON.parse(q.options),
       image: q.image,
-      correctAnswer: q.correct_answer
+      correctAnswer: q.correct_answer,
+      timeLimit: q.timeLimit
     }));
 
     // Initialize game state if it doesn't exist
@@ -28,7 +29,8 @@ router.get('/pin/:pin', async (req, res) => {
           text: q.text,
           options: q.options,
           image: q.image,
-          correctAnswer: q.correctAnswer
+          correctAnswer: q.correctAnswer,
+          timeLimit: q.timeLimit
         })),
         isActive: false,
         currentQuestion: -1,
@@ -45,7 +47,8 @@ router.get('/pin/:pin', async (req, res) => {
       questions: quiz.questions.map(q => ({
         text: q.text,
         options: q.options,
-        image: q.image
+        image: q.image,
+        timeLimit: q.timeLimit
       }))
     };
 
@@ -72,8 +75,8 @@ router.post('/', authMiddleware, async (req, res) => {
     // Insert questions
     for (const q of questions) {
       await db.run(
-        'INSERT INTO questions (quiz_id, text, options, correct_answer, image) VALUES (?, ?, ?, ?, ?)',
-        [quizId, q.text, JSON.stringify(q.options), q.correctAnswer, q.image]
+        'INSERT INTO questions (quiz_id, text, options, correct_answer, image, timeLimit) VALUES (?, ?, ?, ?, ?, ?)',
+        [quizId, q.text, JSON.stringify(q.options), q.correctAnswer, q.image, q.timeLimit || 30]
       );
     }
 
@@ -87,7 +90,8 @@ router.post('/', authMiddleware, async (req, res) => {
         text: q.text,
         options: JSON.parse(q.options),
         image: q.image,
-        correctAnswer: q.correct_answer
+        correctAnswer: q.correct_answer,
+        timeLimit: q.timeLimit
       })),
       isActive: false,
       currentQuestion: -1,

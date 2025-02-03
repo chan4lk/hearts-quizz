@@ -21,7 +21,7 @@ class GameService {
     // Convert questions array to proper format if needed
     const formattedQuestions = initialState.questions.map(q => ({
       ...q,
-      timeLimit: this.QUESTION_TIME_LIMIT
+      timeLimit: q.timeLimit || this.QUESTION_TIME_LIMIT
     }));
 
     const gameState = {

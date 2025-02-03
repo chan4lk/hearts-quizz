@@ -30,7 +30,7 @@ function socketHandler(io) {
         }
 
         // Register socket with game service
-        gameService.registerSocket(socket.id, pin, playerName);
+        await gameService.registerSocket(socket.id, pin, playerName);
 
         // Notify all clients in the room about the new player
         io.to(pin).emit('player_joined', {
@@ -57,13 +57,13 @@ function socketHandler(io) {
       }
     });
 
-    socket.on('start_quiz', ({ pin }) => {
+    socket.on('start_quiz', async ({ pin }) => {
       console.log('Starting quiz:', pin);
-      const gameState = gameService.startQuiz(pin);
+      const gameState = await gameService.startQuiz(pin);
       if (gameState) {
         io.to(pin).emit('quiz_started');
         // Start with first question
-        const firstQuestion = gameService.nextQuestion(pin);
+        const firstQuestion = await gameService.nextQuestion(pin);
         if (firstQuestion) {
           // Send first question to admin
           socket.emit('question_start', { question: firstQuestion.adminData });
@@ -73,16 +73,16 @@ function socketHandler(io) {
       }
     });
 
-    socket.on('next_question', ({ pin }) => {
+    socket.on('next_question', async ({ pin }) => {
       console.log('Moving to next question:', pin);
-      const result = gameService.nextQuestion(pin);
+      const result = await gameService.nextQuestion(pin);
       if (result) {
         if (result.isOver) {
           io.to(pin).emit('quiz_end', result);
         } else {
           // Send admin data to admin socket
           if (socket.isAdmin) {
-          socket.emit('question_start', { question: result.adminData });
+            socket.emit('question_start', { question: result.adminData });
           }
           
           // Send player data to all other sockets in the room
@@ -91,25 +91,25 @@ function socketHandler(io) {
       }
     });
 
-    socket.on('submit_answer', ({ pin, playerName, answer, timeLeft }) => {
+    socket.on('submit_answer', async ({ pin, playerName, answer, timeLeft }) => {
       console.log('Answer submitted:', { pin, playerName, answer, timeLeft });
       
-      const result = gameService.submitAnswer(pin, playerName, answer, timeLeft);
+      const result = await gameService.submitAnswer(pin, playerName, answer, timeLeft);
       if (result) {
         io.to(pin).emit('question_end', result);
       }
     });
 
-    socket.on('disconnect', () => {
+    socket.on('disconnect', async () => {
       console.log('User disconnected:', socket.id);
       if (currentPin) {
         // Clean up player data if they were in a game
-        const players = gameService.handlePlayerDisconnect(socket);
+        const players = await gameService.handlePlayerDisconnect(socket);
         if (players) {
           // Notify others in the room about the player leaving
           io.to(currentPin).emit('player_joined', { players });
         }
-        gameService.handleDisconnect(socket.id);
+        await gameService.handleDisconnect(socket.id);
       }
     });
   });
