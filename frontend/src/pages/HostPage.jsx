@@ -3,6 +3,7 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import useSocket from '../hooks/useSocket';
 import axios from 'axios';
 import { API_URL } from '../config/env';
+import Header from '../components/Header';
 
 const HostPage = () => {
   const { pin } = useParams();
@@ -108,196 +109,199 @@ const HostPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-800">
-              Hosting: {quiz?.title}
-            </h1>
-            <div className="text-2xl font-semibold text-blue-600">
-              PIN: {pin}
-            </div>
-          </div>
-
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg text-center">
-            <p className="text-gray-600 mb-2">Share this link with players:</p>
-            <div className="flex items-center justify-center gap-4">
-              <a
-                href={`${window.location.origin}/join/${pin}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-4 py-2 border rounded bg-white text-blue-600 hover:text-blue-800 flex-1 truncate hover:underline"
-              >
-                {`${window.location.origin}/join/${pin}`}
-              </a>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(`${window.location.origin}/join/${pin}`);
-                }}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 whitespace-nowrap"
-              >
-                Copy Link
-              </button>
-            </div>
-            <p className="mt-2 text-sm text-gray-500">
-              Or go to <a href={window.location.origin} target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-600 hover:text-blue-800 hover:underline">{window.location.origin}</a> and enter PIN: <span className="font-semibold">{pin}</span>
-            </p>
-          </div>
-
-          {error && (
-            <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
-              {error}
-            </div>
-          )}
-
-          {!gameStarted ? (
-            <>
-              <div className="mb-6">
-                <h2 className="text-xl font-semibold mb-3 text-gray-700">
-                  Players ({players.length})
-                </h2>
-                {players.length === 0 ? (
-                  <p className="text-gray-500">Waiting for players to join...</p>
-                ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {players.map((player, index) => (
-                      <div
-                        key={index}
-                        className="bg-gray-100 rounded p-3 text-center"
-                      >
-                        <span className="text-gray-800 font-medium">
-                          {player.playerName || player}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+    <div className="min-h-screen bg-gray-50">
+      <Header userName="Host" />
+      <div className="p-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-3xl font-bold text-gray-800">
+                Hosting: {quiz?.title}
+              </h1>
+              <div className="text-2xl font-semibold text-blue-600">
+                PIN: {pin}
               </div>
+            </div>
 
-              <button
-                onClick={handleStartGame}
-                disabled={players.length === 0}
-                className={`w-full py-3 px-6 rounded-lg text-white font-semibold ${
-                  players.length === 0
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-green-500 hover:bg-green-600'
-                }`}
-              >
-                {players.length === 0 ? 'Waiting for Players' : 'Start Game'}
-              </button>
-            </>
-          ) : (
-            <div className="container mx-auto px-4 py-8">
-              <div className="max-w-4xl mx-auto">
-                {currentQuestion && !showLeaderboard && (
-                  <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-                    <div className="flex justify-between items-center mb-4">
-                      <h2 className="text-xl font-semibold">
-                        Question {currentQuestion.number} of {quiz?.questions?.length}
-                      </h2>
-                      <div className="text-2xl font-bold text-blue-600">
-                        {timeLeft}s
-                      </div>
-                    </div>
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg text-center">
+              <p className="text-gray-600 mb-2">Share this link with players:</p>
+              <div className="flex items-center justify-center gap-4">
+                <a
+                  href={`${window.location.origin}/join/${pin}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 border rounded bg-white text-blue-600 hover:text-blue-800 flex-1 truncate hover:underline"
+                >
+                  {`${window.location.origin}/join/${pin}`}
+                </a>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/join/${pin}`);
+                  }}
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 whitespace-nowrap"
+                >
+                  Copy Link
+                </button>
+              </div>
+              <p className="mt-2 text-sm text-gray-500">
+                Or go to <a href={window.location.origin} target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-600 hover:text-blue-800 hover:underline">{window.location.origin}</a> and enter PIN: <span className="font-semibold">{pin}</span>
+              </p>
+            </div>
 
-                    <div className="w-full bg-gray-200 rounded-full h-2.5 mb-6">
-                      <div
-                        className="bg-blue-600 h-2.5 rounded-full transition-all duration-1000"
-                        style={{
-                          width: `${(timeLeft / currentQuestion.timeLimit) * 100}%`,
-                        }}
-                      ></div>
-                    </div>
+            {error && (
+              <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
+                {error}
+              </div>
+            )}
 
-                    <p className="text-lg mb-4">{currentQuestion.text}</p>
-                    {currentQuestion.image && (
-                      <img
-                        src={currentQuestion.image}
-                        alt="Question"
-                        className="max-w-full h-auto mb-4 rounded-lg"
-                      />
-                    )}
-
-                    <div className="grid grid-cols-2 gap-4">
-                      {currentQuestion.options.map((option, index) => (
+            {!gameStarted ? (
+              <>
+                <div className="mb-6">
+                  <h2 className="text-xl font-semibold mb-3 text-gray-700">
+                    Players ({players.length})
+                  </h2>
+                  {players.length === 0 ? (
+                    <p className="text-gray-500">Waiting for players to join...</p>
+                  ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {players.map((player, index) => (
                         <div
                           key={index}
-                          className={`p-4 rounded-lg ${
-                            index === currentQuestion.correctAnswer
-                              ? 'bg-green-100 border-green-500'
-                              : 'bg-gray-100 border-gray-300'
-                          } border-2`}
+                          className="bg-gray-100 rounded p-3 text-center"
                         >
-                          {option}
+                          <span className="text-gray-800 font-medium">
+                            {player.playerName || player}
+                          </span>
                         </div>
                       ))}
                     </div>
+                  )}
+                </div>
 
-                    {timeLeft === 0 && (
-                      <button
-                        onClick={() => socket.emit('next_question', { pin })}
-                        className="mt-6 w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors"
-                      >
-                        Next Question
-                      </button>
-                    )}
-                  </div>
-                )}
+                <button
+                  onClick={handleStartGame}
+                  disabled={players.length === 0}
+                  className={`w-full py-3 px-6 rounded-lg text-white font-semibold ${
+                    players.length === 0
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-green-500 hover:bg-green-600'
+                  }`}
+                >
+                  {players.length === 0 ? 'Waiting for Players' : 'Start Game'}
+                </button>
+              </>
+            ) : (
+              <div className="container mx-auto px-4 py-8">
+                <div className="max-w-4xl mx-auto">
+                  {currentQuestion && !showLeaderboard && (
+                    <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                      <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-xl font-semibold">
+                          Question {currentQuestion.number} of {quiz?.questions?.length}
+                        </h2>
+                        <div className="text-2xl font-bold text-blue-600">
+                          {timeLeft}s
+                        </div>
+                      </div>
 
-                {showLeaderboard && leaderboard && (
-                  <div className="bg-white rounded-lg shadow-lg p-6">
-                    <h2 className="text-2xl font-bold mb-4 text-center">Leaderboard</h2>
-                    <div className="space-y-4">
-                      {leaderboard.map(({ player, score }, index) => (
+                      <div className="w-full bg-gray-200 rounded-full h-2.5 mb-6">
+                        <div
+                          className="bg-blue-600 h-2.5 rounded-full transition-all duration-1000"
+                          style={{
+                            width: `${(timeLeft / currentQuestion.timeLimit) * 100}%`,
+                          }}
+                        ></div>
+                      </div>
+
+                      <p className="text-lg mb-4">{currentQuestion.text}</p>
+                      {currentQuestion.image && (
+                        <img
+                          src={currentQuestion.image}
+                          alt="Question"
+                          className="max-w-full h-auto mb-4 rounded-lg"
+                        />
+                      )}
+
+                      <div className="grid grid-cols-2 gap-4">
+                        {currentQuestion.options.map((option, index) => (
+                          <div
+                            key={index}
+                            className={`p-4 rounded-lg ${
+                              index === currentQuestion.correctAnswer
+                                ? 'bg-green-100 border-green-500'
+                                : 'bg-gray-100 border-gray-300'
+                            } border-2`}
+                          >
+                            {option}
+                          </div>
+                        ))}
+                      </div>
+
+                      {timeLeft === 0 && (
+                        <button
+                          onClick={() => socket.emit('next_question', { pin })}
+                          className="mt-6 w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                          Next Question
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {showLeaderboard && leaderboard && (
+                    <div className="bg-white rounded-lg shadow-lg p-6">
+                      <h2 className="text-2xl font-bold mb-4 text-center">Leaderboard</h2>
+                      <div className="space-y-4">
+                        {leaderboard.map(({ player, score }, index) => (
+                          <div
+                            key={player}
+                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                          >
+                            <div className="flex items-center">
+                              <span className="text-lg font-semibold mr-4">
+                                #{index + 1}
+                              </span>
+                              <span className="text-lg">{player}</span>
+                            </div>
+                            <span className="text-lg font-semibold">{score} pts</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {!currentQuestion && (
+                        <div className="mt-6 text-center text-xl font-bold text-blue-600">
+                          Game Over!
+                        </div>
+                      )}
+
+                      {currentQuestion && (
+                        <button
+                          onClick={() => socket.emit('next_question', { pin })}
+                          className="mt-6 w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                          Next Question
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="mt-8">
+                    <h3 className="text-xl font-semibold mb-4">Players ({players.length})</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                      {players.map((player) => (
                         <div
                           key={player}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                          className="bg-white rounded-lg shadow p-3 text-center"
                         >
-                          <div className="flex items-center">
-                            <span className="text-lg font-semibold mr-4">
-                              #{index + 1}
-                            </span>
-                            <span className="text-lg">{player}</span>
-                          </div>
-                          <span className="text-lg font-semibold">{score} pts</span>
+                          {player}
                         </div>
                       ))}
                     </div>
-
-                    {!currentQuestion && (
-                      <div className="mt-6 text-center text-xl font-bold text-blue-600">
-                        Game Over!
-                      </div>
-                    )}
-
-                    {currentQuestion && (
-                      <button
-                        onClick={() => socket.emit('next_question', { pin })}
-                        className="mt-6 w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors"
-                      >
-                        Next Question
-                      </button>
-                    )}
-                  </div>
-                )}
-
-                <div className="mt-8">
-                  <h3 className="text-xl font-semibold mb-4">Players ({players.length})</h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                    {players.map((player) => (
-                      <div
-                        key={player}
-                        className="bg-white rounded-lg shadow p-3 text-center"
-                      >
-                        {player}
-                      </div>
-                    ))}
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>

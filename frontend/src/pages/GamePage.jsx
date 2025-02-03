@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import useSocket from '../hooks/useSocket';
 import ProgressBar from '../components/common/ProgressBar';
+import Header from '../components/Header';
 
 const GamePage = () => {
   const { pin } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const { socket, isConnected } = useSocket();
   const playerName = location.state?.playerName;
   const [currentQuestion, setCurrentQuestion] = useState(null);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
@@ -19,8 +19,11 @@ const GamePage = () => {
   const [showCorrectAnswer, setShowCorrectAnswer] = useState(false);
   const [correctAnswer, setCorrectAnswer] = useState(null);
 
+  const { socket, isConnected } = useSocket();
+
   useEffect(() => {
     if (!socket || !isConnected || !playerName || !pin) {
+      navigate('/');
       return;
     }
 
@@ -111,141 +114,130 @@ const GamePage = () => {
     return 'bg-white hover:bg-gray-100 text-gray-800';
   };
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-md">
-          <div className="text-red-600 text-center">{error}</div>
-          <div className="text-gray-600 text-center mt-2">
-            Redirecting to join page...
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isConnected) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-md">
-          <div className="text-gray-600 text-center">
-            Waiting for connection...
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (showLeaderboard) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-bold text-center mb-6">Leaderboard</h2>
-          <div className="space-y-4">
-            {(leaderboard || []).map((player, index) => (
-              <div
-                key={player.name}
-                className="flex justify-between items-center p-3 bg-gray-50 rounded"
-              >
-                <div className="flex items-center">
-                  <span className="font-medium text-gray-600 mr-3">
-                    {index + 1}.
-                  </span>
-                  <span className="font-medium">
-                    {player.name}
-                  </span>
-                </div>
-                <span className="font-bold text-blue-600">
-                  {player.score} pts
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!currentQuestion) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-md">
-          <h2 className="text-2xl font-bold text-center mb-4">
-            Waiting for quiz to start...
-          </h2>
-          <p className="text-gray-600 text-center">
-            The host will start the quiz shortly
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          {timeLeft !== null && currentQuestion?.timeLimit && (
-            <div className="mb-6">
-              <div className="text-center mb-2">
-                <div className="text-2xl font-bold text-blue-600">
-                  {timeLeft}s
-                </div>
-              </div>
-              <ProgressBar timeLeft={timeLeft} totalTime={currentQuestion.timeLimit} />
+    <div className="min-h-screen bg-gray-50">
+      <Header userName={playerName} />
+      {error ? (
+        <div className="p-4">
+          <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+            <div className="text-red-600 text-center">{error}</div>
+            <div className="text-gray-600 text-center mt-2">
+              Redirecting to join page...
             </div>
-          )}
-
-          <h2 className="text-xl font-bold mb-6">
-            {currentQuestion?.text}
-          </h2>
-
-          {currentQuestion?.image && (
-            <div className="mb-6">
-              <img
-                src={currentQuestion.image}
-                alt="Question"
-                className="w-full max-h-64 object-contain rounded-lg"
-              />
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-4 mt-8">
-            {currentQuestion.options.map((option, index) => (
-              <button
-                key={index}
-                onClick={() => handleAnswerSelect(index)}
-                disabled={answered || showCorrectAnswer}
-                className={`
-                  p-4 rounded-lg shadow-md transition-colors duration-200
-                  ${getButtonColor(index)}
-                  ${answered || showCorrectAnswer ? 'cursor-default' : 'cursor-pointer'}
-                  disabled:opacity-70
-                `}
-              >
-                {option}
-              </button>
-            ))}
           </div>
-
-          {answered && !showCorrectAnswer && (
-            <div className="mt-6 text-center text-gray-600">
-              Answer submitted! Waiting for other players...
-            </div>
-          )}
-
-          {showCorrectAnswer && (
-            <div className="mt-6 text-center">
-              <div className={`text-xl font-bold ${selectedAnswer === correctAnswer ? 'text-green-600' : 'text-red-600'}`}>
-                {selectedAnswer === correctAnswer ? 'Correct!' : 'Wrong!'}
-              </div>
-              <div className="text-gray-600 mt-2">
-                The correct answer was: {currentQuestion.options[correctAnswer]}
-              </div>
-            </div>
-          )}
         </div>
-      </div>
+      ) : !isConnected ? (
+        <div className="p-4">
+          <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+            <div className="text-gray-600 text-center">
+              Waiting for connection...
+            </div>
+          </div>
+        </div>
+      ) : showLeaderboard ? (
+        <div className="p-4">
+          <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-2xl font-bold text-center mb-6">Leaderboard</h2>
+            <div className="space-y-4">
+              {(leaderboard || []).map((player, index) => (
+                <div
+                  key={player.name}
+                  className="flex justify-between items-center p-3 bg-gray-50 rounded"
+                >
+                  <div className="flex items-center">
+                    <span className="font-medium text-gray-600 mr-3">
+                      {index + 1}.
+                    </span>
+                    <span className="font-medium">
+                      {player.name}
+                    </span>
+                  </div>
+                  <span className="font-bold text-blue-600">
+                    {player.score} pts
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : !currentQuestion ? (
+        <div className="p-4">
+          <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-2xl font-bold text-center mb-4">
+              Waiting for quiz to start...
+            </h2>
+            <p className="text-gray-600 text-center">
+              The host will start the quiz shortly
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="p-4">
+          <div className="max-w-2xl mx-auto">
+            <div className="bg-white rounded-lg shadow-md p-6">
+              {timeLeft !== null && currentQuestion?.timeLimit && (
+                <div className="mb-6">
+                  <div className="text-center mb-2">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {timeLeft}s
+                    </div>
+                  </div>
+                  <ProgressBar timeLeft={timeLeft} totalTime={currentQuestion.timeLimit} />
+                </div>
+              )}
+
+              <h2 className="text-xl font-bold mb-6">
+                {currentQuestion?.text}
+              </h2>
+
+              {currentQuestion?.image && (
+                <div className="mb-6">
+                  <img
+                    src={currentQuestion.image}
+                    alt="Question"
+                    className="w-full max-h-64 object-contain rounded-lg"
+                  />
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4 mt-8">
+                {currentQuestion.options.map((option, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleAnswerSelect(index)}
+                    disabled={answered || showCorrectAnswer}
+                    className={`
+                      p-4 rounded-lg shadow-md transition-colors duration-200
+                      ${getButtonColor(index)}
+                      ${answered || showCorrectAnswer ? 'cursor-default' : 'cursor-pointer'}
+                      disabled:opacity-70
+                    `}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+
+              {answered && !showCorrectAnswer && (
+                <div className="mt-6 text-center text-gray-600">
+                  Answer submitted! Waiting for other players...
+                </div>
+              )}
+
+              {showCorrectAnswer && (
+                <div className="mt-6 text-center">
+                  <div className={`text-xl font-bold ${selectedAnswer === correctAnswer ? 'text-green-600' : 'text-red-600'}`}>
+                    {selectedAnswer === correctAnswer ? 'Correct!' : 'Wrong!'}
+                  </div>
+                  <div className="text-gray-600 mt-2">
+                    The correct answer was: {currentQuestion.options[correctAnswer]}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
