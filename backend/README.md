@@ -1,4 +1,4 @@
-# Khoot Clone Backend
+# BistecQuizz Backend
 
 ## Environment Variables
 

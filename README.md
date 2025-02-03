@@ -1,4 +1,4 @@
-# Khoot Clone
+# BistecQuizz
 
 A real-time quiz application inspired by Kahoot, built with React and Node.js.
 
