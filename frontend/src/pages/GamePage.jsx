@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import useSocket from '../hooks/useSocket';
+import ProgressBar from '../components/common/ProgressBar';
 
 const GamePage = () => {
   const { pin } = useParams();
@@ -15,6 +16,8 @@ const GamePage = () => {
   const [leaderboard, setLeaderboard] = useState([]);
   const [timeLeft, setTimeLeft] = useState(null);
   const [error, setError] = useState('');
+  const [showCorrectAnswer, setShowCorrectAnswer] = useState(false);
+  const [correctAnswer, setCorrectAnswer] = useState(null);
 
   useEffect(() => {
     console.log('Socket:', socket);
@@ -42,7 +45,6 @@ const GamePage = () => {
     console.log('Setting up game socket listeners and joining quiz');
     socket.emit('join_quiz', { pin, playerName });
 
-    // Set up all event listeners
     socket.on('quiz_error', ({ message }) => {
       console.error('Quiz error:', message);
       setError(message);
@@ -51,19 +53,26 @@ const GamePage = () => {
       }, 3000);
     });
 
-    socket.on('question_start', ({ question, timeLimit }) => {
+    socket.on('question_start', ({ question }) => {
       console.log('Question started:', question);
       setCurrentQuestion(question);
-      setTimeLeft(timeLimit);
+      setTimeLeft(question.timeLimit);
       setAnswered(false);
       setSelectedAnswer(null);
       setShowLeaderboard(false);
+      setShowCorrectAnswer(false);
+      setCorrectAnswer(question.correctAnswer);
     });
 
     socket.on('question_end', ({ leaderboard }) => {
       console.log('Question ended, leaderboard:', leaderboard);
-      setLeaderboard(leaderboard || []);
-      setShowLeaderboard(true);
+      setShowCorrectAnswer(true);
+      
+      // Show leaderboard after 10 seconds of showing correct answer
+      setTimeout(() => {
+        setLeaderboard(leaderboard || []);
+        setShowLeaderboard(true);
+      }, 10000);
     });
 
     socket.on('quiz_end', ({ finalLeaderboard }) => {
@@ -73,7 +82,6 @@ const GamePage = () => {
       setCurrentQuestion(null);
     });
 
-    // Cleanup function
     return () => {
       console.log('Cleaning up game socket listeners');
       socket.off('quiz_error');
@@ -90,6 +98,8 @@ const GamePage = () => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
+          // When timer reaches 0, show correct answer
+          setShowCorrectAnswer(true);
           return 0;
         }
         return prev - 1;
@@ -107,8 +117,41 @@ const GamePage = () => {
     socket.emit('submit_answer', {
       pin,
       playerName,
-      answer
+      answer,
+      timeLeft // Send remaining time for scoring
     });
+  };
+
+  // Helper function to get button color based on state
+  const getButtonColor = (index) => {
+    if (!answered && !showCorrectAnswer) {
+      return selectedAnswer === index ? 'bg-blue-500 hover:bg-blue-600' : 'bg-white hover:bg-gray-50';
+    }
+    
+    if (showCorrectAnswer) {
+      if (index === correctAnswer) {
+        return 'bg-green-500 hover:bg-green-500';
+      }
+      if (selectedAnswer === index && selectedAnswer !== correctAnswer) {
+        return 'bg-red-500 hover:bg-red-500';
+      }
+    }
+    
+    return 'bg-gray-100 hover:bg-gray-100';
+  };
+
+  const getButtonTextColor = (index) => {
+    if (!answered && !showCorrectAnswer) {
+      return selectedAnswer === index ? 'text-white' : 'text-gray-700';
+    }
+    
+    if (showCorrectAnswer) {
+      if (index === correctAnswer || (selectedAnswer === index && selectedAnswer !== correctAnswer)) {
+        return 'text-white';
+      }
+    }
+    
+    return 'text-gray-700';
   };
 
   if (error) {
@@ -185,29 +228,46 @@ const GamePage = () => {
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-lg shadow-md p-6">
-          {timeLeft !== null && (
-            <div className="text-center mb-4">
-              <div className="text-2xl font-bold text-blue-600">
-                {timeLeft}s
+          {timeLeft !== null && currentQuestion?.timeLimit && (
+            <div className="mb-6">
+              <div className="text-center mb-2">
+                <div className="text-2xl font-bold text-blue-600">
+                  {timeLeft}s
+                </div>
               </div>
+              <ProgressBar timeLeft={timeLeft} totalTime={currentQuestion.timeLimit} />
             </div>
           )}
 
           <h2 className="text-xl font-bold mb-6">
-            {currentQuestion.text}
+            {currentQuestion?.text}
           </h2>
+
+          {currentQuestion?.image && (
+            <div className="mb-6">
+              <img
+                src={currentQuestion.image}
+                alt="Question"
+                className="w-full max-h-64 object-contain rounded-lg"
+              />
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             {currentQuestion.options.map((option, index) => (
               <button
                 key={index}
-                onClick={() => handleAnswerSelect(option)}
-                disabled={answered}
-                className={`p-4 rounded-lg text-center transition-colors ${
-                  selectedAnswer === option
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 hover:bg-gray-200'
-                } ${answered ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                onClick={() => handleAnswerSelect(index)}
+                disabled={answered || showCorrectAnswer}
+                className={`
+                  p-4 rounded-lg border shadow-sm
+                  ${getButtonColor(index)}
+                  ${getButtonTextColor(index)}
+                  transition-colors duration-200
+                  disabled:cursor-not-allowed
+                  flex items-center justify-center
+                  min-h-[100px] text-lg font-medium
+                `}
               >
                 {option}
               </button>

@@ -96,7 +96,24 @@ function socketHandler(io) {
       
       const result = await gameService.submitAnswer(pin, playerName, answer, timeLeft);
       if (result) {
-        io.to(pin).emit('question_end', result);
+        // Send immediate feedback to the player who answered
+        socket.emit('answer_submitted', result);
+      }
+    });
+
+    socket.on('question_timeout', async ({ pin }) => {
+      console.log('Question timed out:', pin);
+      
+      // Get question end data with correct answer and leaderboard
+      const result = await gameService.endQuestion(pin);
+      if (result) {
+        // First send the correct answer to everyone
+        io.to(pin).emit('show_correct_answer', { correctAnswer: result.correctAnswer });
+
+        // After 10 seconds, show the leaderboard
+        setTimeout(() => {
+          io.to(pin).emit('show_leaderboard', { leaderboard: result.leaderboard });
+        }, 10000);
       }
     });
 

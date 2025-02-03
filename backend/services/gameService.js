@@ -138,10 +138,22 @@ class GameService {
     const currentQ = gameState.questions[gameState.currentQuestion];
     if (!currentQ) return null;
 
-    // Record answer and calculate score
+    // Record answer and calculate score based on time left
     const isCorrect = answer === currentQ.correctAnswer;
-    const score = isCorrect ? Math.ceil(timeLeft * 100) : 0;
+    const timeBonus = timeLeft / currentQ.timeLimit; // Time bonus factor (0 to 1)
+    const baseScore = 1000; // Base score for correct answer
+    const score = isCorrect ? Math.ceil(baseScore * timeBonus) : 0;
     
+    // Store the answer with score and time info
+    gameState.answers.set(playerName, {
+      answer,
+      isCorrect,
+      score,
+      timeLeft,
+      timeBonus
+    });
+    
+    // Update total score
     gameState.scores.set(
       playerName,
       (gameState.scores.get(playerName) || 0) + score
@@ -149,10 +161,10 @@ class GameService {
     
     await gameStateService.saveGameState(pin, gameState);
     
+    // Don't return correct answer immediately
     return {
-      isCorrect,
-      score,
-      correctAnswer: currentQ.correctAnswer
+      answered: true,
+      score
     };
   }
 
@@ -170,9 +182,9 @@ class GameService {
       
       return {
         isOver: true,
-        finalLeaderboard: Array.from(gameState.scores.entries()).map(
-          ([playerName, score]) => ({ playerName, score })
-        ).sort((a, b) => b.score - a.score)
+        finalLeaderboard: Array.from(gameState.scores.entries())
+          .map(([name, score]) => ({ name, score }))
+          .sort((a, b) => b.score - a.score)
       };
     }
 
@@ -195,6 +207,38 @@ class GameService {
         number: gameState.currentQuestion + 1,
         total: gameState.questions.length
       }
+    };
+  }
+
+  async endQuestion(pin) {
+    const gameState = await this.getGameState(pin);
+    if (!gameState || !gameState.isActive) return null;
+
+    const currentQ = gameState.questions[gameState.currentQuestion];
+    if (!currentQ) return null;
+
+    // Calculate leaderboard with time-based sorting
+    const leaderboard = Array.from(gameState.scores.entries())
+      .map(([name, totalScore]) => {
+        const answer = gameState.answers.get(name);
+        return {
+          name,
+          score: totalScore,
+          lastAnswer: answer || { score: 0, timeBonus: 0, isCorrect: false }
+        };
+      })
+      .sort((a, b) => {
+        // First sort by total score
+        if (b.score !== a.score) return b.score - a.score;
+        // Then by correctness of last answer
+        if (b.lastAnswer.isCorrect !== a.lastAnswer.isCorrect) return b.lastAnswer.isCorrect ? 1 : -1;
+        // Finally by time bonus of last answer
+        return b.lastAnswer.timeBonus - a.lastAnswer.timeBonus;
+      });
+
+    return {
+      leaderboard,
+      correctAnswer: currentQ.correctAnswer
     };
   }
 
@@ -244,41 +288,6 @@ class GameService {
     }, this.QUESTION_TIME_LIMIT * 1000));
 
     return { playerData: baseQuestionData, adminData: adminQuestionData };
-  }
-
-  async endQuestion(pin) {
-    const gameState = await this.getGameState(pin);
-    if (!gameState || !gameState.isActive) {
-      console.error('Invalid game state for pin:', pin);
-      return null;
-    }
-
-    // Clear the timer
-    if (this.questionTimers.has(pin)) {
-      clearTimeout(this.questionTimers.get(pin));
-      this.questionTimers.delete(pin);
-    }
-
-    const currentAnswers = gameState.answers.get(gameState.currentQuestion) || new Map();
-    const correctAnswer = gameState.questions[gameState.currentQuestion].correctAnswer;
-
-    // Calculate scores for this question
-    for (const [playerName, answer] of currentAnswers.entries()) {
-      if (answer.answer === correctAnswer) {
-        const timeBonus = Math.floor(answer.timeLeft / 2);
-        const score = 100 + timeBonus;
-        const currentScore = gameState.scores.get(playerName) || 0;
-        gameState.scores.set(playerName, currentScore + score);
-      }
-    }
-
-    // Return results including the correct answer
-    return {
-      correctAnswer,
-      leaderboard: Array.from(gameState.scores.entries())
-        .map(([name, score]) => ({ name, score }))
-        .sort((a, b) => b.score - a.score)
-    };
   }
 
   async getQuestionEndData(pin) {
