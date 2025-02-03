@@ -89,6 +89,7 @@ const GamePage = () => {
       pin,
       playerName,
       answer,
+      timeLeft
     });
   };
 
