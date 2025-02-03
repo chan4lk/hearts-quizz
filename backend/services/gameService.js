@@ -1,19 +1,13 @@
-const Quiz = require('../models/Quiz');
-const gameStateService = require('./gameStateService');
-const db = require('../db'); // assuming db is defined in a separate file
+const db = require('../db');
+const gameStateManager = require('./gameStateManager');
 
 class GameService {
   constructor() {
-    this.gameStates = new Map();
-    this.questionTimers = new Map();
     this.QUESTION_TIME_LIMIT = 20; // seconds
     this.playerSockets = new Map();
+    this.gameStates = new Map();
+    this.questionTimers = new Map();
     this.playerScores = new Map();
-    
-    // Restore game states when service is initialized
-    this.restoreGameStates().catch(err => {
-      console.error('Failed to restore game states:', err);
-    });
   }
 
   async initializeQuiz(pin, initialState) {
@@ -28,15 +22,15 @@ class GameService {
     const gameState = {
       ...initialState,
       questions: formattedQuestions,
-      scores: new Map(),
-      answers: new Map(),
       isActive: false,
       currentQuestion: -1,
-      totalPlayers: 0
+      players: [],
+      scores: new Map(),
+      answers: new Map()
     };
 
+    await gameStateManager.saveGameState(pin, gameState);
     this.gameStates.set(pin, gameState);
-    await gameStateService.saveGameState(pin, gameState);
     return gameState;
   }
 
@@ -45,7 +39,7 @@ class GameService {
     
     // If not in memory, try to load from persistence
     if (!gameState) {
-      gameState = await gameStateService.loadGameState(pin);
+      gameState = await gameStateManager.getGameState(pin);
       if (gameState) {
         this.gameStates.set(pin, gameState);
       }
@@ -58,7 +52,7 @@ class GameService {
   async joinQuiz(pin, playerName) {
     console.log('Joining quiz:', { pin, playerName });
     
-    let gameState = await this.getGameState(pin);
+    let gameState = await gameStateManager.getGameState(pin);
     
     // If admin is joining and no game state exists, initialize it
     if (!gameState && playerName === 'admin') {
@@ -78,36 +72,22 @@ class GameService {
         timeLimit: q.timeLimit || this.QUESTION_TIME_LIMIT
       }));
 
-      gameState = {
-        questions: formattedQuestions,
-        scores: new Map(),
-        answers: new Map(),
-        isActive: false,
-        currentQuestion: -1,
-        totalPlayers: 0
-      };
-
-      this.gameStates.set(pin, gameState);
-      await gameStateService.saveGameState(pin, gameState);
+      gameState = await this.initializeQuiz(pin, { questions: formattedQuestions });
     }
 
     if (!gameState) {
-      console.error('No game found for pin:', pin);
-      return { success: false, error: 'Game not found' };
+      return { success: false, error: 'Quiz not found' };
     }
 
-    // Skip adding admin to scores
-    if (playerName !== 'admin') {
-      if (!gameState.scores.has(playerName)) {
-        gameState.scores.set(playerName, 0);
-        gameState.totalPlayers++;
-        await gameStateService.saveGameState(pin, gameState);
-      }
+    // Don't add admin to the players list
+    if (playerName !== 'admin' && !gameState.players.includes(playerName)) {
+      gameState.players.push(playerName);
+      await gameStateManager.saveGameState(pin, gameState);
     }
 
-    return {
-      success: true,
-      players: Array.from(gameState.scores.keys())
+    return { 
+      success: true, 
+      players: gameState.players
     };
   }
 
@@ -119,16 +99,63 @@ class GameService {
       return null;
     }
 
-    if (gameState.isActive) {
-      console.error('Quiz already active:', pin);
+    // Reset game state when starting
+    gameState.isActive = true;
+    gameState.currentQuestion = -1;
+    gameState.players = gameState.players || [];
+    gameState.scores = new Map();
+    gameState.answers = new Map();
+
+    // Save the updated game state
+    await gameStateManager.saveGameState(pin, gameState);
+
+    // Start with first question
+    return gameState;
+  }
+
+  async nextQuestion(pin) {
+    const gameState = await this.getGameState(pin);
+    if (!gameState || !gameState.isActive) {
+      console.error('No active game found for pin:', pin);
       return null;
     }
 
-    gameState.isActive = true;
-    gameState.currentQuestion = -1;
+    // Clear previous question's answers
+    gameState.answers = new Map();
+    
+    // Move to next question
+    gameState.currentQuestion++;
 
-    // Start with first question
-    return this.nextQuestion(pin);
+    // Check if quiz is over
+    if (gameState.currentQuestion >= gameState.questions.length) {
+      gameState.isActive = false;
+      await gameStateManager.saveGameState(pin, gameState);
+      return {
+        isOver: true,
+        finalLeaderboard: Array.from(gameState.scores.entries())
+          .map(([player, score]) => ({ player, score }))
+          .sort((a, b) => b.score - a.score)
+      };
+    }
+
+    const question = gameState.questions[gameState.currentQuestion];
+    await gameStateManager.saveGameState(pin, gameState);
+
+    // Return different data for admin and players
+    return {
+      adminData: {
+        ...question,
+        number: gameState.currentQuestion + 1,
+        correctAnswer: question.correctAnswer
+      },
+      playerData: {
+        text: question.text,
+        options: question.options,
+        image: question.image,
+        timeLimit: question.timeLimit,
+        number: gameState.currentQuestion + 1
+      }
+    };
   }
 
   async submitAnswer(pin, playerName, answer, timeLeft) {
@@ -159,54 +186,12 @@ class GameService {
       (gameState.scores.get(playerName) || 0) + score
     );
     
-    await gameStateService.saveGameState(pin, gameState);
+    await gameStateManager.saveGameState(pin, gameState);
     
     // Don't return correct answer immediately
     return {
       answered: true,
       score
-    };
-  }
-
-  async nextQuestion(pin) {
-    const gameState = await this.getGameState(pin);
-    if (!gameState || !gameState.isActive) return null;
-
-    gameState.currentQuestion++;
-    const question = gameState.questions[gameState.currentQuestion];
-    
-    if (!question) {
-      // Quiz is over
-      gameState.isActive = false;
-      await gameStateService.saveGameState(pin, gameState);
-      
-      return {
-        isOver: true,
-        finalLeaderboard: Array.from(gameState.scores.entries())
-          .map(([name, score]) => ({ name, score }))
-          .sort((a, b) => b.score - a.score)
-      };
-    }
-
-    // Clear previous answers
-    gameState.answers = new Map();
-    await gameStateService.saveGameState(pin, gameState);
-
-    // Return different data for admin and players
-    return {
-      adminData: {
-        ...question,
-        number: gameState.currentQuestion + 1,
-        total: gameState.questions.length
-      },
-      playerData: {
-        text: question.text,
-        image: question.image,
-        options: question.options,
-        timeLimit: question.timeLimit,
-        number: gameState.currentQuestion + 1,
-        total: gameState.questions.length
-      }
     };
   }
 
@@ -328,7 +313,7 @@ class GameService {
   }
 
   async registerSocket(socketId, pin, playerName) {
-    this.playerSockets.set(socketId, { pin, name: playerName });
+    this.playerSockets.set(socketId, { pin, playerName });
   }
 
   async handleDisconnect(socketId) {
@@ -342,7 +327,7 @@ class GameService {
       if (gameState) {
         gameState.scores.delete(name);
         gameState.totalPlayers--;
-        await gameStateService.saveGameState(pin, gameState);
+        await gameStateManager.saveGameState(pin, gameState);
         
         // Clean up quiz if no players left
         if (gameState.totalPlayers === 0) {
@@ -371,7 +356,7 @@ class GameService {
       if (!gameState.scores.has(playerName)) {
         gameState.scores.set(playerName, 0);
         gameState.totalPlayers++;
-        await gameStateService.saveGameState(pin, gameState);
+        await gameStateManager.saveGameState(pin, gameState);
       }
     }
     
@@ -389,7 +374,7 @@ class GameService {
       if (gameState) {
         gameState.scores.delete(playerData.playerName);
         gameState.totalPlayers--;
-        await gameStateService.saveGameState(pin, gameState);
+        await gameStateManager.saveGameState(pin, gameState);
         
         // Clean up quiz if no players left
         if (gameState.totalPlayers === 0) {
@@ -417,7 +402,7 @@ class GameService {
       if (gameState) {
         gameState.scores.delete(playerName);
         gameState.totalPlayers--;
-        await gameStateService.saveGameState(pin, gameState);
+        await gameStateManager.saveGameState(pin, gameState);
         
         // Clean up quiz if no players left
         if (gameState.totalPlayers === 0) {
@@ -445,13 +430,13 @@ class GameService {
     
     // Remove game state
     this.gameStates.delete(pin);
-    await gameStateService.removeGameState(pin);
+    await gameStateManager.removeGameState(pin);
   }
 
   async restoreGameStates() {
     try {
       // Get all active game states from the database using gameStateService
-      const allStates = await gameStateService.getAllGameStates();
+      const allStates = await gameStateManager.getAllGameStates();
       
       if (!allStates) {
         console.log('No game states to restore');
@@ -474,4 +459,5 @@ class GameService {
   }
 }
 
+// Export singleton instance
 module.exports = new GameService();

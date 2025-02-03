@@ -2,6 +2,51 @@ const gameService = require('../services/gameService');
 const db = require('../db');
 
 function socketHandler(io) {
+  const questionTimers = new Map();
+
+  function startQuestionTimer(pin, timeLimit) {
+    // Clear any existing timer
+    if (questionTimers.has(pin)) {
+      clearInterval(questionTimers.get(pin).interval);
+      questionTimers.delete(pin);
+    }
+
+    const startTime = Date.now();
+    const timer = {
+      startTime,
+      timeLimit,
+      interval: setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const timeLeft = Math.max(0, timeLimit - elapsed);
+        
+        // Emit time update to all players
+        io.to(pin).emit('time_update', { timeLeft, totalTime: timeLimit });
+        
+        // When time is up
+        if (timeLeft === 0) {
+          clearInterval(timer.interval);
+          questionTimers.delete(pin);
+          handleQuestionTimeout(pin);
+        }
+      }, 1000)
+    };
+    
+    questionTimers.set(pin, timer);
+  }
+
+  async function handleQuestionTimeout(pin) {
+    const result = await gameService.endQuestion(pin);
+    if (result) {
+      // First send the correct answer to everyone
+      io.to(pin).emit('show_correct_answer', { correctAnswer: result.correctAnswer });
+
+      // After 10 seconds, show the leaderboard
+      setTimeout(() => {
+        io.to(pin).emit('show_leaderboard', { leaderboard: result.leaderboard });
+      }, 10000);
+    }
+  }
+
   io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
@@ -60,15 +105,26 @@ function socketHandler(io) {
     socket.on('start_quiz', async ({ pin }) => {
       console.log('Starting quiz:', pin);
       const gameState = await gameService.startQuiz(pin);
-      if (gameState) {
-        io.to(pin).emit('quiz_started');
-        // Start with first question
-        const firstQuestion = await gameService.nextQuestion(pin);
-        if (firstQuestion) {
+      if (!gameState) {
+        socket.emit('quiz_error', { message: 'Failed to start quiz' });
+        return;
+      }
+
+      // Notify all players that the quiz has started
+      io.to(pin).emit('quiz_started');
+
+      // Start with first question
+      const firstQuestion = await gameService.nextQuestion(pin);
+      if (firstQuestion) {
+        if (firstQuestion.isOver) {
+          io.to(pin).emit('quiz_end', firstQuestion);
+        } else {
           // Send first question to admin
           socket.emit('question_start', { question: firstQuestion.adminData });
           // Send player data to other players
           socket.to(pin).emit('question_start', { question: firstQuestion.playerData });
+          // Start the timer
+          startQuestionTimer(pin, firstQuestion.adminData.timeLimit);
         }
       }
     });
@@ -81,12 +137,11 @@ function socketHandler(io) {
           io.to(pin).emit('quiz_end', result);
         } else {
           // Send admin data to admin socket
-          if (socket.isAdmin) {
-            socket.emit('question_start', { question: result.adminData });
-          }
-          
+          socket.emit('question_start', { question: result.adminData });
           // Send player data to all other sockets in the room
           socket.to(pin).emit('question_start', { question: result.playerData });
+          // Start the timer
+          startQuestionTimer(pin, result.adminData.timeLimit);
         }
       }
     });
@@ -98,22 +153,6 @@ function socketHandler(io) {
       if (result) {
         // Send immediate feedback to the player who answered
         socket.emit('answer_submitted', result);
-      }
-    });
-
-    socket.on('question_timeout', async ({ pin }) => {
-      console.log('Question timed out:', pin);
-      
-      // Get question end data with correct answer and leaderboard
-      const result = await gameService.endQuestion(pin);
-      if (result) {
-        // First send the correct answer to everyone
-        io.to(pin).emit('show_correct_answer', { correctAnswer: result.correctAnswer });
-
-        // After 10 seconds, show the leaderboard
-        setTimeout(() => {
-          io.to(pin).emit('show_leaderboard', { leaderboard: result.leaderboard });
-        }, 10000);
       }
     });
 

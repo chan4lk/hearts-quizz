@@ -18,7 +18,65 @@ const HostPage = () => {
   const [leaderboard, setLeaderboard] = useState(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
 
-  // Fetch quiz if not available from location state
+  useEffect(() => {
+    if (!isConnected || !socket || !pin) return;
+
+    socket.emit('join_quiz', { pin, playerName: 'admin' });
+
+    socket.on('quiz_error', ({ message }) => {
+      console.error('Quiz error:', message);
+      setError(message);
+      navigate('/');
+    });
+
+    socket.on('quiz_data', (data) => {
+      setQuiz(data);
+    });
+
+    socket.on('player_joined', ({ players }) => {
+      const gamePlayers = players.filter(p => p !== 'admin');
+      setPlayers(gamePlayers);
+    });
+
+    socket.on('quiz_started', () => {
+      setGameStarted(true);
+      setShowLeaderboard(false);
+    });
+
+    socket.on('question_start', ({ question }) => {
+      setCurrentQuestion(question);
+      setTimeLeft(question.timeLimit);
+      setShowLeaderboard(false);
+    });
+
+    socket.on('time_update', ({ timeLeft }) => {
+      setTimeLeft(timeLeft);
+    });
+
+    socket.on('show_leaderboard', ({ leaderboard }) => {
+      setLeaderboard(leaderboard);
+      setShowLeaderboard(true);
+    });
+
+    socket.on('quiz_end', ({ finalLeaderboard }) => {
+      setLeaderboard(finalLeaderboard);
+      setShowLeaderboard(true);
+      setGameStarted(false);
+      setCurrentQuestion(null);
+    });
+
+    return () => {
+      socket.off('quiz_error');
+      socket.off('quiz_data');
+      socket.off('player_joined');
+      socket.off('quiz_started');
+      socket.off('question_start');
+      socket.off('time_update');
+      socket.off('show_leaderboard');
+      socket.off('quiz_end');
+    };
+  }, [socket, isConnected, pin, navigate]);
+
   useEffect(() => {
     if (!isConnected || !socket || !pin) return;
 
@@ -36,103 +94,6 @@ const HostPage = () => {
       fetchQuiz();
     }
   }, [isConnected, socket, pin, quiz]);
-
-  // Join as admin
-  useEffect(() => {
-    if (!isConnected || !socket || !pin) return;
-    
-    console.log('Joining as admin:', pin);
-    socket.emit('join_quiz', { pin, playerName: 'admin' });
-  }, [isConnected, socket, pin]);
-
-  useEffect(() => {
-    if (!socket || !isConnected) return;
-
-    const onPlayerJoined = ({ players, playerName }) => {
-      console.log('Players updated:', players);
-      if (Array.isArray(players)) {
-        setPlayers(players);
-      } else if (playerName) {
-        setPlayers(prev => [...prev, playerName]);
-      }
-    };
-
-    const onPlayerLeft = ({ players }) => {
-      console.log('Players updated after leave:', players);
-      if (Array.isArray(players)) {
-        setPlayers(players);
-      }
-    };
-
-    const onQuizStarted = () => {
-      console.log('Quiz started');
-      setGameStarted(true);
-      setShowLeaderboard(false);
-    };
-
-    const onQuestionStart = ({ question }) => {
-      console.log('Received question:', question);
-      setCurrentQuestion(question);
-      setTimeLeft(question.timeLimit);
-      setShowLeaderboard(false);
-    };
-
-    const onQuestionEnd = ({ leaderboard }) => {
-      console.log('Question ended, leaderboard:', leaderboard);
-      setLeaderboard(leaderboard);
-      setShowLeaderboard(true);
-    };
-
-    const onQuizEnd = ({ finalLeaderboard }) => {
-      console.log('Quiz ended, final leaderboard:', finalLeaderboard);
-      setLeaderboard(finalLeaderboard);
-      setShowLeaderboard(true);
-      setGameStarted(false);
-      setCurrentQuestion(null);
-    };
-
-    const onQuizError = ({ message }) => {
-      console.error('Quiz error:', message);
-      setError(message);
-    };
-
-    console.log('Setting up host socket listeners');
-    
-    socket.on('player_joined', onPlayerJoined);
-    socket.on('player_left', onPlayerLeft);
-    socket.on('quiz_started', onQuizStarted);
-    socket.on('question_start', onQuestionStart);
-    socket.on('question_end', onQuestionEnd);
-    socket.on('quiz_end', onQuizEnd);
-    socket.on('quiz_error', onQuizError);
-
-    return () => {
-      console.log('Cleaning up host socket listeners');
-      socket.off('player_joined', onPlayerJoined);
-      socket.off('player_left', onPlayerLeft);
-      socket.off('quiz_started', onQuizStarted);
-      socket.off('question_start', onQuestionStart);
-      socket.off('question_end', onQuestionEnd);
-      socket.off('quiz_end', onQuizEnd);
-      socket.off('quiz_error', onQuizError);
-    };
-  }, [socket, isConnected]);
-
-  useEffect(() => {
-    let timer;
-    if (currentQuestion && timeLeft > 0 && !showLeaderboard) {
-      timer = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(timer);
-  }, [currentQuestion, timeLeft, showLeaderboard]);
 
   const handleStartGame = () => {
     if (players.length === 0) {
@@ -227,86 +188,114 @@ const HostPage = () => {
               </button>
             </>
           ) : (
-            <div className="space-y-6">
-              {showLeaderboard && leaderboard ? (
-                <div>
-                  <h2 className="text-2xl font-bold text-center mb-6">Leaderboard</h2>
-                  <div className="space-y-4">
-                    {leaderboard.map((player, index) => (
-                      <div
-                        key={player.name}
-                        className="flex justify-between items-center p-4 bg-gray-50 rounded-lg"
-                      >
-                        <div className="flex items-center">
-                          <span className="text-2xl font-bold mr-4">#{index + 1}</span>
-                          <span className="text-lg">{player.name}</span>
-                        </div>
-                        <span className="text-xl font-semibold">{player.score}</span>
+            <div className="container mx-auto px-4 py-8">
+              <div className="max-w-4xl mx-auto">
+                {currentQuestion && !showLeaderboard && (
+                  <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h2 className="text-xl font-semibold">
+                        Question {currentQuestion.number} of {quiz?.questions?.length}
+                      </h2>
+                      <div className="text-2xl font-bold text-blue-600">
+                        {timeLeft}s
                       </div>
-                    ))}
-                  </div>
-                  <button
-                    onClick={handleNextQuestion}
-                    className="mt-6 w-full bg-blue-500 text-white py-3 px-6 rounded-lg hover:bg-blue-600"
-                  >
-                    Next Question
-                  </button>
-                </div>
-              ) : currentQuestion ? (
-                <div className="bg-gray-50 p-6 rounded-lg">
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold">
-                      Question {currentQuestion.number} of {quiz?.questions?.length || 0}
-                    </h2>
-                    <div className="text-2xl font-bold text-blue-600">
-                      {timeLeft}s
                     </div>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5 mb-6">
-                    <div
-                      className="bg-blue-600 h-2.5 rounded-full transition-all duration-1000"
-                      style={{
-                        width: `${(timeLeft / currentQuestion.timeLimit) * 100}%`,
-                      }}
-                    ></div>
-                  </div>
-                  <p className="text-lg mb-4">{currentQuestion.text}</p>
-                  {currentQuestion.image && (
-                    <img
-                      src={currentQuestion.image}
-                      alt="Question"
-                      className="max-w-full h-auto mb-4 rounded"
-                    />
-                  )}
-                  <div className="grid grid-cols-2 gap-4">
-                    {currentQuestion.options.map((option, index) => (
+
+                    <div className="w-full bg-gray-200 rounded-full h-2.5 mb-6">
                       <div
-                        key={index}
-                        className={`p-4 rounded-lg shadow text-center ${
-                          index === currentQuestion.correctAnswer
-                            ? 'bg-purple-100 border-2 border-purple-500'
-                            : 'bg-white'
-                        }`}
+                        className="bg-blue-600 h-2.5 rounded-full transition-all duration-1000"
+                        style={{
+                          width: `${(timeLeft / currentQuestion.timeLimit) * 100}%`,
+                        }}
+                      ></div>
+                    </div>
+
+                    <p className="text-lg mb-4">{currentQuestion.text}</p>
+                    {currentQuestion.image && (
+                      <img
+                        src={currentQuestion.image}
+                        alt="Question"
+                        className="max-w-full h-auto mb-4 rounded-lg"
+                      />
+                    )}
+
+                    <div className="grid grid-cols-2 gap-4">
+                      {currentQuestion.options.map((option, index) => (
+                        <div
+                          key={index}
+                          className={`p-4 rounded-lg ${
+                            index === currentQuestion.correctAnswer
+                              ? 'bg-green-100 border-green-500'
+                              : 'bg-gray-100 border-gray-300'
+                          } border-2`}
+                        >
+                          {option}
+                        </div>
+                      ))}
+                    </div>
+
+                    {timeLeft === 0 && (
+                      <button
+                        onClick={() => socket.emit('next_question', { pin })}
+                        className="mt-6 w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors"
                       >
-                        <div className={`text-lg ${
-                          index === currentQuestion.correctAnswer
-                            ? 'text-purple-800 font-bold'
-                            : ''
-                        }`}>{option}</div>
-                        {index === currentQuestion.correctAnswer && (
-                          <div className="text-sm text-purple-600 mt-2 font-semibold">
-                            ★ Correct Answer ★
+                        Next Question
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {showLeaderboard && leaderboard && (
+                  <div className="bg-white rounded-lg shadow-lg p-6">
+                    <h2 className="text-2xl font-bold mb-4 text-center">Leaderboard</h2>
+                    <div className="space-y-4">
+                      {leaderboard.map(({ player, score }, index) => (
+                        <div
+                          key={player}
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                        >
+                          <div className="flex items-center">
+                            <span className="text-lg font-semibold mr-4">
+                              #{index + 1}
+                            </span>
+                            <span className="text-lg">{player}</span>
                           </div>
-                        )}
+                          <span className="text-lg font-semibold">{score} pts</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {!currentQuestion && (
+                      <div className="mt-6 text-center text-xl font-bold text-blue-600">
+                        Game Over!
+                      </div>
+                    )}
+
+                    {currentQuestion && (
+                      <button
+                        onClick={() => socket.emit('next_question', { pin })}
+                        className="mt-6 w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        Next Question
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                <div className="mt-8">
+                  <h3 className="text-xl font-semibold mb-4">Players ({players.length})</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    {players.map((player) => (
+                      <div
+                        key={player}
+                        className="bg-white rounded-lg shadow p-3 text-center"
+                      >
+                        {player}
                       </div>
                     ))}
                   </div>
                 </div>
-              ) : (
-                <div className="text-center text-lg text-blue-600 font-semibold">
-                  Starting game...
-                </div>
-              )}
+              </div>
             </div>
           )}
         </div>

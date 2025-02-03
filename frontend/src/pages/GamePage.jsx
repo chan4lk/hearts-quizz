@@ -20,24 +20,6 @@ const GamePage = () => {
   const [correctAnswer, setCorrectAnswer] = useState(null);
 
   useEffect(() => {
-    console.log('Socket:', socket);
-    if (!socket) return;
-
-    socket.on('connect', () => {
-      console.log('Connected to server');
-    });
-
-    socket.on('disconnect', () => {
-      console.log('Disconnected from server');
-    });
-
-    return () => {
-      socket.off('connect');
-      socket.off('disconnect');
-    };
-  }, [socket]);
-
-  useEffect(() => {
     if (!socket || !isConnected || !playerName || !pin) {
       return;
     }
@@ -61,23 +43,28 @@ const GamePage = () => {
       setSelectedAnswer(null);
       setShowLeaderboard(false);
       setShowCorrectAnswer(false);
-      setCorrectAnswer(question.correctAnswer);
+      setCorrectAnswer(null);
     });
 
-    socket.on('question_end', ({ leaderboard }) => {
-      console.log('Question ended, leaderboard:', leaderboard);
+    socket.on('time_update', ({ timeLeft }) => {
+      setTimeLeft(timeLeft);
+    });
+
+    socket.on('show_correct_answer', ({ correctAnswer }) => {
+      console.log('Showing correct answer:', correctAnswer);
+      setCorrectAnswer(correctAnswer);
       setShowCorrectAnswer(true);
-      
-      // Show leaderboard after 10 seconds of showing correct answer
-      setTimeout(() => {
-        setLeaderboard(leaderboard || []);
-        setShowLeaderboard(true);
-      }, 10000);
+    });
+
+    socket.on('show_leaderboard', ({ leaderboard }) => {
+      console.log('Showing leaderboard:', leaderboard);
+      setLeaderboard(leaderboard);
+      setShowLeaderboard(true);
     });
 
     socket.on('quiz_end', ({ finalLeaderboard }) => {
       console.log('Quiz ended, final leaderboard:', finalLeaderboard);
-      setLeaderboard(finalLeaderboard || []);
+      setLeaderboard(finalLeaderboard);
       setShowLeaderboard(true);
       setCurrentQuestion(null);
     });
@@ -86,28 +73,12 @@ const GamePage = () => {
       console.log('Cleaning up game socket listeners');
       socket.off('quiz_error');
       socket.off('question_start');
-      socket.off('question_end');
+      socket.off('time_update');
+      socket.off('show_correct_answer');
+      socket.off('show_leaderboard');
       socket.off('quiz_end');
     };
   }, [socket, isConnected, playerName, pin, navigate]);
-
-  useEffect(() => {
-    if (timeLeft === null) return;
-
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          // When timer reaches 0, show correct answer
-          setShowCorrectAnswer(true);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [timeLeft]);
 
   const handleAnswerSelect = (answer) => {
     if (answered || !currentQuestion) return;
@@ -118,40 +89,25 @@ const GamePage = () => {
       pin,
       playerName,
       answer,
-      timeLeft // Send remaining time for scoring
     });
   };
 
-  // Helper function to get button color based on state
   const getButtonColor = (index) => {
-    if (!answered && !showCorrectAnswer) {
-      return selectedAnswer === index ? 'bg-blue-500 hover:bg-blue-600' : 'bg-white hover:bg-gray-50';
-    }
-    
     if (showCorrectAnswer) {
       if (index === correctAnswer) {
-        return 'bg-green-500 hover:bg-green-500';
+        return 'bg-green-500 hover:bg-green-500 text-white';
       }
       if (selectedAnswer === index && selectedAnswer !== correctAnswer) {
-        return 'bg-red-500 hover:bg-red-500';
+        return 'bg-red-500 hover:bg-red-500 text-white';
       }
+      return 'bg-gray-200 hover:bg-gray-200';
     }
-    
-    return 'bg-gray-100 hover:bg-gray-100';
-  };
 
-  const getButtonTextColor = (index) => {
-    if (!answered && !showCorrectAnswer) {
-      return selectedAnswer === index ? 'text-white' : 'text-gray-700';
+    if (selectedAnswer === index) {
+      return 'bg-blue-500 hover:bg-blue-500 text-white';
     }
-    
-    if (showCorrectAnswer) {
-      if (index === correctAnswer || (selectedAnswer === index && selectedAnswer !== correctAnswer)) {
-        return 'text-white';
-      }
-    }
-    
-    return 'text-gray-700';
+
+    return 'bg-white hover:bg-gray-100 text-gray-800';
   };
 
   if (error) {
@@ -253,20 +209,17 @@ const GamePage = () => {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 mt-8">
             {currentQuestion.options.map((option, index) => (
               <button
                 key={index}
                 onClick={() => handleAnswerSelect(index)}
                 disabled={answered || showCorrectAnswer}
                 className={`
-                  p-4 rounded-lg border shadow-sm
+                  p-4 rounded-lg shadow-md transition-colors duration-200
                   ${getButtonColor(index)}
-                  ${getButtonTextColor(index)}
-                  transition-colors duration-200
-                  disabled:cursor-not-allowed
-                  flex items-center justify-center
-                  min-h-[100px] text-lg font-medium
+                  ${answered || showCorrectAnswer ? 'cursor-default' : 'cursor-pointer'}
+                  disabled:opacity-70
                 `}
               >
                 {option}
@@ -274,9 +227,20 @@ const GamePage = () => {
             ))}
           </div>
 
-          {answered && (
+          {answered && !showCorrectAnswer && (
             <div className="mt-6 text-center text-gray-600">
               Answer submitted! Waiting for other players...
+            </div>
+          )}
+
+          {showCorrectAnswer && (
+            <div className="mt-6 text-center">
+              <div className={`text-xl font-bold ${selectedAnswer === correctAnswer ? 'text-green-600' : 'text-red-600'}`}>
+                {selectedAnswer === correctAnswer ? 'Correct!' : 'Wrong!'}
+              </div>
+              <div className="text-gray-600 mt-2">
+                The correct answer was: {currentQuestion.options[correctAnswer]}
+              </div>
             </div>
           )}
         </div>
