@@ -1,0 +1,60 @@
+import * as pulumi from "@pulumi/pulumi";
+import * as resources from "@pulumi/azure-native/resources";
+import * as web from "@pulumi/azure-native/web";
+
+// Configuration
+const projectName = "bistecquizz";
+const stackName = pulumi.getStack();
+const resourceGroupName = `${projectName}-${stackName}-rg`;
+
+// Create an Azure Resource Group
+const resourceGroup = new resources.ResourceGroup(resourceGroupName, {
+    location: "southeastasia",
+});
+
+// Create App Service Plan (Basic Tier)
+const appServicePlan = new web.AppServicePlan("asp", {
+    resourceGroupName: resourceGroup.name,
+    kind: "Linux",
+    reserved: true,
+    sku: {
+        name: "B1",
+        tier: "Basic",
+        size: "B1",
+        capacity: 1
+    },
+});
+
+// Create Frontend App Service
+const frontendApp = new web.WebApp("frontend", {
+    resourceGroupName: resourceGroup.name,
+    serverFarmId: appServicePlan.id,
+    name: `${projectName}-frontend-${stackName}`,
+    siteConfig: {
+        linuxFxVersion: "NODE|16-lts",
+        appSettings: [
+            { name: "WEBSITE_NODE_DEFAULT_VERSION", value: "~16" },
+            { name: "WEBSITE_NPM_DEFAULT_VERSION", value: "8.19.2" },
+            { name: "SCM_DO_BUILD_DURING_DEPLOYMENT", value: "true" },
+        ],
+    },
+});
+
+// Create Backend App Service
+const backendApp = new web.WebApp("backend", {
+    resourceGroupName: resourceGroup.name,
+    serverFarmId: appServicePlan.id,
+    name: `${projectName}-backend-${stackName}`,
+    siteConfig: {
+        linuxFxVersion: "NODE|16-lts",
+        appSettings: [
+            { name: "WEBSITE_NODE_DEFAULT_VERSION", value: "~16" },
+            { name: "WEBSITE_NPM_DEFAULT_VERSION", value: "8.19.2" },
+            { name: "SCM_DO_BUILD_DURING_DEPLOYMENT", value: "true" },
+        ],
+    },
+});
+
+// Export the endpoints
+export const frontendUrl = pulumi.interpolate`https://${frontendApp.defaultHostName}`;
+export const backendUrl = pulumi.interpolate`https://${backendApp.defaultHostName}`;
