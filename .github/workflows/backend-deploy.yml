@@ -36,9 +36,9 @@ jobs:
         cd backend
         # Create a production build directory
         mkdir -p build
-        # Copy necessary files
+        # Copy all necessary files and directories
         cp package.json build/
-        cp -r server.js config controllers middleware models routes services build/
+        cp -r server.js config controllers middleware models routes services utils db build/
         cd build
         # Install production dependencies
         npm install --production
@@ -46,17 +46,18 @@ jobs:
         echo "cd /home/site/wwwroot && npm start" > startup.sh
         chmod +x startup.sh
 
+    - name: Login to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
     - name: Deploy to Azure
       uses: azure/webapps-deploy@v2
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
         publish-profile: ${{ secrets.BACKEND_PUBLISH_PROFILE }}
         package: backend/build
-
-    - name: Login to Azure
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        startup-command: "/home/site/wwwroot/startup.sh"
 
     - name: Configure startup command
       uses: azure/CLI@v1
