@@ -54,9 +54,7 @@ jobs:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
         publish-profile: ${{ secrets.FRONTEND_PUBLISH_PROFILE }}
         package: frontend/dist
-
-    - name: Configure startup command
-      uses: azure/CLI@v1
-      with:
-        inlineScript: |
-          az webapp config set --resource-group bistecquizz-dev-rg --name ${{ env.AZURE_WEBAPP_NAME }} --startup-file /home/site/wwwroot/startup.sh --linux-fx-version "NODE|20-lts"
+        startup-command: "/home/site/wwwroot/startup.sh"
+        app-settings: |
+          SCM_DO_BUILD_DURING_DEPLOYMENT=false
+          WEBSITE_NODE_DEFAULT_VERSION=~20

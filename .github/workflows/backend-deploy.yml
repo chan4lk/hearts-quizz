@@ -44,30 +44,22 @@ jobs:
         echo "cd /home/site/wwwroot && npm start" > startup.sh
         chmod +x startup.sh
 
+    - name: Login to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
     - name: Deploy to Azure
       uses: azure/webapps-deploy@v2
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
         publish-profile: ${{ secrets.BACKEND_PUBLISH_PROFILE }}
         package: backend/build
-
-    - name: Login to Azure
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-    - name: Configure startup command
-      uses: azure/CLI@v1
-      with:
-        inlineScript: |
-          az webapp config set --resource-group bistecquizz-dev-rg --name ${{ env.AZURE_WEBAPP_NAME }} --startup-file /home/site/wwwroot/startup.sh --linux-fx-version "NODE|20-lts"
-
-    - name: Configure App Settings
-      uses: azure/CLI@v1
-      with:
-        inlineScript: |
-          az webapp config appsettings set --resource-group bistecquizz-dev-rg --name ${{ env.AZURE_WEBAPP_NAME }} --settings \
-            PORT=8080 \
-            JWT_SECRET=${{ secrets.JWT_SECRET }} \
-            ADMIN_USERNAME=${{ secrets.ADMIN_USERNAME }} \
-            ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
+        startup-command: "/home/site/wwwroot/startup.sh"
+        app-settings: |
+          PORT=8080
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          ADMIN_USERNAME=${{ secrets.ADMIN_USERNAME }}
+          ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
+          WEBSITE_NODE_DEFAULT_VERSION=~20
+          SCM_DO_BUILD_DURING_DEPLOYMENT=false
