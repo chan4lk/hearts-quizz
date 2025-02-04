@@ -43,9 +43,20 @@ jobs:
         echo "pm2 serve /home/site/wwwroot --no-daemon --spa" > startup.sh
         chmod +x startup.sh
 
+    - name: Login to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
     - name: Deploy to Azure
       uses: azure/webapps-deploy@v2
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
         publish-profile: ${{ secrets.FRONTEND_PUBLISH_PROFILE }}
         package: frontend/dist
+
+    - name: Configure startup command
+      uses: azure/CLI@v1
+      with:
+        inlineScript: |
+          az webapp config set --resource-group bistecquizz-dev-rg --name ${{ env.AZURE_WEBAPP_NAME }} --startup-file /home/site/wwwroot/startup.sh --linux-fx-version "NODE|20-lts"
