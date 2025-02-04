@@ -18,6 +18,7 @@ const GamePage = () => {
   const [error, setError] = useState('');
   const [showCorrectAnswer, setShowCorrectAnswer] = useState(false);
   const [correctAnswer, setCorrectAnswer] = useState(null);
+  const [winner, setWinner] = useState(null);
 
   const { socket, isConnected } = useSocket();
 
@@ -65,11 +66,12 @@ const GamePage = () => {
       setShowLeaderboard(true);
     });
 
-    socket.on('quiz_end', ({ finalLeaderboard }) => {
-      console.log('Quiz ended, final leaderboard:', finalLeaderboard);
+    socket.on('quiz_end', ({ finalLeaderboard, winner }) => {
+      console.log('Quiz ended, final leaderboard:', finalLeaderboard, 'Winner:', winner);
       setLeaderboard(finalLeaderboard);
       setShowLeaderboard(true);
       setCurrentQuestion(null);
+      setWinner(winner);
     });
 
     return () => {
@@ -117,6 +119,14 @@ const GamePage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header userName={playerName} />
+      {(!currentQuestion && winner) && (
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-lg shadow-md p-6 my-4 text-center">
+            <h2 className="text-2xl font-bold mb-4">Game Over!</h2>
+            <p className="text-lg">Winner: {winner?.name ?? winner}</p>
+          </div>
+        </div>
+      )}
       {error ? (
         <div className="p-4">
           <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">

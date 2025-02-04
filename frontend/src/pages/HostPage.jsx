@@ -18,6 +18,7 @@ const HostPage = () => {
   const [timeLeft, setTimeLeft] = useState(0);
   const [leaderboard, setLeaderboard] = useState(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [winner, setWinner] = useState(null);
 
   useEffect(() => {
     if (!isConnected || !socket || !pin) return;
@@ -60,11 +61,12 @@ const HostPage = () => {
       setShowLeaderboard(true);
     });
 
-    socket.on('quiz_end', ({ finalLeaderboard }) => {
+    socket.on('quiz_end', ({ finalLeaderboard, winner }) => {
+      console.log('Quiz ended, final leaderboard:', finalLeaderboard, 'Winner:', winner);
       setLeaderboard(finalLeaderboard);
       setShowLeaderboard(true);
-      setGameStarted(false);
       setCurrentQuestion(null);
+      setWinner(winner);
     });
 
     return () => {
@@ -237,15 +239,6 @@ const HostPage = () => {
                           </div>
                         ))}
                       </div>
-
-                      {timeLeft === 0 && (
-                        <button
-                          onClick={() => socket.emit('next_question', { pin })}
-                          className="mt-6 w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors"
-                        >
-                          Next Question
-                        </button>
-                      )}
                     </div>
                   )}
 
@@ -272,6 +265,17 @@ const HostPage = () => {
                       {!currentQuestion && (
                         <div className="mt-6 text-center text-xl font-bold text-blue-600">
                           Game Over!
+                          <button
+                            onClick={handleStartGame}
+                            disabled={players.length === 0}
+                            className={`w-full py-3 px-6 rounded-lg text-white font-semibold ${
+                              players.length === 0
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-green-500 hover:bg-green-600'
+                            }`}
+                          >
+                            {players.length === 0 ? 'Waiting for Players' : 'Restart Game'}
+                          </button>
                         </div>
                       )}
 
