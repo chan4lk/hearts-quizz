@@ -68,7 +68,7 @@ jobs:
       uses: azure/CLI@v1
       with:
         inlineScript: |
-          az webapp config appsettings set --resource-group ${{ env.AZURE_RESOURCE_GROUP_NAME }}--name ${{ env.AZURE_WEBAPP_NAME }} --settings \
+          az webapp config appsettings set --resource-group ${{ env.AZURE_RESOURCE_GROUP_NAME }} --name ${{ env.AZURE_WEBAPP_NAME }} --settings \
             PORT=8080 \
             JWT_SECRET=${{ secrets.JWT_SECRET }} \
             CORS_ALLOWED_ORIGINS=${{ env.CORS_ALLOWED_ORIGINS }} \
