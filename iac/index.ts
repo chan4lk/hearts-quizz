@@ -31,10 +31,10 @@ const frontendApp = new web.WebApp("frontend", {
     serverFarmId: appServicePlan.id,
     name: `${projectName}-frontend-${stackName}`,
     siteConfig: {
-        linuxFxVersion: "NODE|16-lts",
+        linuxFxVersion: "NODE|20-lts",
         appSettings: [
-            { name: "WEBSITE_NODE_DEFAULT_VERSION", value: "~16" },
-            { name: "WEBSITE_NPM_DEFAULT_VERSION", value: "8.19.2" },
+            { name: "WEBSITE_NODE_DEFAULT_VERSION", value: "~20" },
+            { name: "WEBSITE_NPM_DEFAULT_VERSION", value: "10.2.4" },
             { name: "SCM_DO_BUILD_DURING_DEPLOYMENT", value: "true" },
         ],
     },
@@ -46,10 +46,10 @@ const backendApp = new web.WebApp("backend", {
     serverFarmId: appServicePlan.id,
     name: `${projectName}-backend-${stackName}`,
     siteConfig: {
-        linuxFxVersion: "NODE|16-lts",
+        linuxFxVersion: "NODE|20-lts",
         appSettings: [
-            { name: "WEBSITE_NODE_DEFAULT_VERSION", value: "~16" },
-            { name: "WEBSITE_NPM_DEFAULT_VERSION", value: "8.19.2" },
+            { name: "WEBSITE_NODE_DEFAULT_VERSION", value: "~20" },
+            { name: "WEBSITE_NPM_DEFAULT_VERSION", value: "10.2.4" },
             { name: "SCM_DO_BUILD_DURING_DEPLOYMENT", value: "true" },
         ],
     },

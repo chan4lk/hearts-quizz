@@ -1,0 +1,64 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-deploy.yml'
+
+env:
+  NODE_VERSION: '20.x'
+  AZURE_WEBAPP_NAME: bistecquizz-backend-dev
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+
+    - name: Install Dependencies
+      run: |
+        cd backend
+        npm install
+
+    - name: Prepare for production
+      run: |
+        cd backend
+        # Create a production build directory
+        mkdir -p build
+        # Copy necessary files
+        cp -r server.js config controllers middleware models routes services *.json build/
+        # Create a startup command file
+        echo "cd /home/site/wwwroot && npm install && npm start" > build/startup.sh
+        chmod +x build/startup.sh
+
+    - name: Deploy to Azure
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ env.AZURE_WEBAPP_NAME }}
+        publish-profile: ${{ secrets.BACKEND_PUBLISH_PROFILE }}
+        package: backend/build
+
+    - name: Configure startup command
+      uses: azure/CLI@v1
+      with:
+        inlineScript: |
+          az webapp config set --resource-group bistecquizz-dev-rg --name ${{ env.AZURE_WEBAPP_NAME }} --startup-file /home/site/wwwroot/startup.sh --linux-fx-version "NODE|20-lts"
+
+    - name: Configure App Settings
+      uses: azure/CLI@v1
+      with:
+        inlineScript: |
+          az webapp config appsettings set --resource-group bistecquizz-dev-rg --name ${{ env.AZURE_WEBAPP_NAME }} --settings \
+            PORT=8080 \
+            JWT_SECRET=${{ secrets.JWT_SECRET }} \
+            ADMIN_USERNAME=${{ secrets.ADMIN_USERNAME }} \
+            ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
