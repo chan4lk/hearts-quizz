@@ -46,6 +46,7 @@ const HostPage = () => {
 
     socket.on('question_start', ({ question }) => {
       setCurrentQuestion(question);
+      console.log('Starting question:', question);
       setTimeLeft(question.timeLimit);
       setShowLeaderboard(false);
     });
@@ -227,7 +228,7 @@ const HostPage = () => {
                           <div
                             key={index}
                             className={`p-4 rounded-lg ${
-                              index === currentQuestion.correctAnswer
+                              String(index) === currentQuestion.correctAnswer
                                 ? 'bg-green-100 border-green-500'
                                 : 'bg-gray-100 border-gray-300'
                             } border-2`}
@@ -252,7 +253,7 @@ const HostPage = () => {
                     <div className="bg-white rounded-lg shadow-lg p-6">
                       <h2 className="text-2xl font-bold mb-4 text-center">Leaderboard</h2>
                       <div className="space-y-4">
-                        {leaderboard.map(({ player, score }, index) => (
+                        {leaderboard.map(({ name, player, score }, index) => (
                           <div
                             key={player}
                             className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
@@ -261,7 +262,7 @@ const HostPage = () => {
                               <span className="text-lg font-semibold mr-4">
                                 #{index + 1}
                               </span>
-                              <span className="text-lg">{player}</span>
+                              <span className="text-lg">{ name ?? player}</span>
                             </div>
                             <span className="text-lg font-semibold">{score} pts</span>
                           </div>
