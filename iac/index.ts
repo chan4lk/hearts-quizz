@@ -25,7 +25,7 @@ const appServicePlan = new web.AppServicePlan("asp", {
     },
 });
 
-// Create Frontend App Service
+// Create Frontend App Service (Static Site)
 const frontendApp = new web.WebApp("frontend", {
     resourceGroupName: resourceGroup.name,
     serverFarmId: appServicePlan.id,
@@ -33,10 +33,11 @@ const frontendApp = new web.WebApp("frontend", {
     siteConfig: {
         linuxFxVersion: "NODE|20-lts",
         appSettings: [
-            { name: "WEBSITE_NODE_DEFAULT_VERSION", value: "~20" },
-            { name: "WEBSITE_NPM_DEFAULT_VERSION", value: "10.2.4" },
-            { name: "SCM_DO_BUILD_DURING_DEPLOYMENT", value: "true" },
+            { name: "SCM_DO_BUILD_DURING_DEPLOYMENT", value: "false" },
         ],
+        http20Enabled: true,
+        webSocketsEnabled: true,
+        appCommandLine: "pm2 serve /home/site/wwwroot --no-daemon --spa"
     },
 });
 

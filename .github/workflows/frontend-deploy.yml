@@ -36,6 +36,13 @@ jobs:
         cd frontend
         npm run build
 
+    - name: Prepare for deployment
+      run: |
+        cd frontend/dist
+        npm install -g pm2
+        echo "pm2 serve /home/site/wwwroot --no-daemon --spa" > startup.sh
+        chmod +x startup.sh
+
     - name: Deploy to Azure
       uses: azure/webapps-deploy@v2
       with:
