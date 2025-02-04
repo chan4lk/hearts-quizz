@@ -10,6 +10,7 @@ on:
 env:
   NODE_VERSION: '20.x'
   AZURE_WEBAPP_NAME: bistecquizz-frontend-dev
+  AZURE_RESOURCE_GROUP_NAME: bistecquizz-dev-rgd041c3fc
 
 jobs:
   build-and-deploy:
@@ -59,4 +60,4 @@ jobs:
       uses: azure/CLI@v1
       with:
         inlineScript: |
-          az webapp config set --resource-group bistecquizz-dev-rg --name ${{ env.AZURE_WEBAPP_NAME }} --startup-file /home/site/wwwroot/startup.sh --linux-fx-version "NODE|20-lts"
+          az webapp config set --resource-group ${{ env.AZURE_RESOURCE_GROUP_NAME }} --name ${{ env.AZURE_WEBAPP_NAME }} --startup-file /home/site/wwwroot/startup.sh --linux-fx-version "NODE|20-lts"
