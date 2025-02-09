@@ -156,6 +156,43 @@ function socketHandler(io) {
       }
     });
 
+    socket.on('disconnect_all_players', async ({ pin }) => {
+      console.log('Received disconnect all players request for quiz:', pin);
+      try {
+        // Get all sockets in the room except admin
+        const sockets = await io.in(pin).fetchSockets();
+        console.log(`Found ${sockets.length} sockets in room ${pin}`);
+        
+        let disconnectedCount = 0;
+        for (const socket of sockets) {
+          const playerName = await gameService.getPlayerNameFromSocket(socket.id);
+          if (playerName !== 'admin') {
+            console.log(`Disconnecting player ${playerName} (${socket.id})`);
+            socket.disconnect(true);
+            disconnectedCount++;
+          }
+        }
+        console.log(`Disconnected ${disconnectedCount} players from quiz ${pin}`);
+        
+        // Reset the game state players
+        const result = await gameService.disconnectAllPlayers(pin);
+        if (result.success) {
+          console.log('Successfully reset game state, notifying remaining clients');
+          // Emit to all sockets in the room, including the host
+          io.to(pin).emit('players_disconnected', {
+            players: result.players,
+            message: `${disconnectedCount} players have been disconnected`
+          });
+        }
+      } catch (error) {
+        console.error('Error disconnecting players:', error);
+        socket.emit('quiz_error', { 
+          message: 'Failed to disconnect players',
+          error: error.message 
+        });
+      }
+    });
+
     socket.on('disconnect', async () => {
       console.log('User disconnected:', socket.id);
       if (currentPin) {

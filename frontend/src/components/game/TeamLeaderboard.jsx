@@ -14,7 +14,7 @@ const TeamLeaderboard = ({ teams, players }) => {
   
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
+    <div className="max-w-2xl mx-auto">
       <Paper elevation={2} className="overflow-hidden">
         <List className="divide-y">
           {teams.map((team, index) => (

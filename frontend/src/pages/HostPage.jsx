@@ -41,6 +41,22 @@ const HostPage = () => {
       setPlayers(gamePlayers);
     });
 
+    socket.on('players_disconnected', ({ players, message }) => {
+      const gamePlayers = players.filter(p => p !== 'admin');
+      setPlayers(gamePlayers);
+      // Reset game state if it was started
+      if (gameStarted) {
+        setGameStarted(false);
+        setCurrentQuestion(null);
+        setShowLeaderboard(false);
+        setLeaderboard(null);
+        setWinner(null);
+      }
+      // Show temporary success message
+      setError(message);
+      setTimeout(() => setError(null), 3000);
+    });
+
     socket.on('quiz_started', () => {
       setGameStarted(true);
       setShowLeaderboard(false);
@@ -74,6 +90,7 @@ const HostPage = () => {
       socket.off('quiz_error');
       socket.off('quiz_data');
       socket.off('player_joined');
+      socket.off('players_disconnected');
       socket.off('quiz_started');
       socket.off('question_start');
       socket.off('time_update');
@@ -110,6 +127,23 @@ const HostPage = () => {
 
   const handleNextQuestion = () => {
     socket.emit('next_question', { pin });
+  };
+
+  const handleDisconnectAll = () => {
+    if (window.confirm('Are you sure you want to disconnect all players?')) {
+      // Clear the players list immediately
+      setPlayers([]);
+      // Reset game state if it was started
+      if (gameStarted) {
+        setGameStarted(false);
+        setCurrentQuestion(null);
+        setShowLeaderboard(false);
+        setLeaderboard(null);
+        setWinner(null);
+      }
+      // Then emit the disconnect event
+      socket.emit('disconnect_all_players', { pin });
+    }
   };
 
   return (
@@ -162,9 +196,22 @@ const HostPage = () => {
             {!gameStarted ? (
               <>
                 <div className="mb-6">
-                  <h2 className="text-xl font-semibold mb-3 text-gray-700">
-                    Players ({players.length})
-                  </h2>
+                  <div className="flex justify-between items-center mb-3">
+                    <h2 className="text-xl font-semibold text-gray-700">
+                      Players ({players.length})
+                    </h2>
+                    <button
+                      onClick={handleDisconnectAll}
+                      className={`px-4 py-2 text-white rounded transition-colors ${
+                        players.length === 0 
+                          ? 'bg-red-300 cursor-not-allowed' 
+                          : 'bg-red-500 hover:bg-red-600'
+                      }`}
+                      disabled={players.length === 0}
+                    >
+                      Disconnect All
+                    </button>
+                  </div>
                   {players.length === 0 ? (
                     <p className="text-gray-500">Waiting for players to join...</p>
                   ) : (
@@ -245,7 +292,7 @@ const HostPage = () => {
                           <div
                             key={index}
                             className={`p-4 rounded-lg ${
-                              String(index) === currentQuestion.correctAnswer
+                              index === currentQuestion.correctAnswer
                                 ? 'bg-green-100 border-green-500'
                                 : 'bg-gray-100 border-gray-300'
                             } border-2`}
@@ -291,19 +338,34 @@ const HostPage = () => {
                       </div>
 
                       {!currentQuestion && (
-                        <div className="mt-6 text-center text-xl font-bold text-blue-600">
-                          Game Over!
-                          <button
-                            onClick={handleStartGame}
-                            disabled={players.length === 0}
-                            className={`w-full py-3 px-6 rounded-lg text-white font-semibold ${
-                              players.length === 0
-                                ? 'bg-gray-400 cursor-not-allowed'
-                                : 'bg-green-500 hover:bg-green-600'
-                            }`}
-                          >
-                            {players.length === 0 ? 'Waiting for Players' : 'Restart Game'}
-                          </button>
+                        <div className="mt-6 text-center">
+                          <div className="text-xl font-bold text-blue-600 mb-4">
+                            Game Over!
+                          </div>
+                          <div className="flex gap-4">
+                            <button
+                              onClick={handleStartGame}
+                              disabled={players.length === 0}
+                              className={`flex-1 py-3 px-6 rounded-lg text-white font-semibold ${
+                                players.length === 0
+                                  ? 'bg-gray-400 cursor-not-allowed'
+                                  : 'bg-green-500 hover:bg-green-600'
+                              }`}
+                            >
+                              {players.length === 0 ? 'Waiting for Players' : 'Restart Game'}
+                            </button>
+                            <button
+                              onClick={handleDisconnectAll}
+                              className={`px-6 text-white rounded-lg transition-colors ${
+                                players.length === 0 
+                                  ? 'bg-red-300 cursor-not-allowed' 
+                                  : 'bg-red-500 hover:bg-red-600'
+                              }`}
+                              disabled={players.length === 0}
+                            >
+                              Disconnect All
+                            </button>
+                          </div>
                         </div>
                       )}
 

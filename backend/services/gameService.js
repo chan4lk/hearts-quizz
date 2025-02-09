@@ -314,6 +314,7 @@ class GameService {
   }
 
   async handleDisconnect(socketId) {
+    console.log('Handling player disconnection:', socketId);
     const playerData = this.playerSockets.get(socketId);
     if (playerData) {
       const { pin, name } = playerData;
@@ -338,6 +339,7 @@ class GameService {
       // Return updated player list
       return this.getPlayerList(pin);
     }
+    console.log('No player found for socket:', socketId);
     return null;
   }
 
@@ -362,6 +364,7 @@ class GameService {
   }
 
   async handlePlayerLeave(socket, pin) {
+    console.log('Player leaving room:', { pin, socketId: socket.id });
     const playerData = this.playerSockets.get(socket.id);
     if (playerData && playerData.pin === pin) {
       console.log('Player leaving room:', { pin, playerName: playerData.playerName });
@@ -385,10 +388,12 @@ class GameService {
       // Return updated player list
       return this.getPlayerList(pin);
     }
+    console.log('No player found for socket:', socket.id);
     return null;
   }
 
   async handlePlayerDisconnect(socket) {
+    console.log('Handling player disconnection:', socket.id);
     const playerData = this.playerSockets.get(socket.id);
     if (playerData) {
       const { pin, playerName } = playerData;
@@ -413,6 +418,7 @@ class GameService {
       // Return updated player list
       return this.getPlayerList(pin);
     }
+    console.log('No player found for socket:', socket.id);
     return null;
   }
 
@@ -453,6 +459,48 @@ class GameService {
       console.error('Error restoring game states:', err);
       throw err;
     }
+  }
+
+  async getPlayerNameFromSocket(socketId) {
+    console.log('Getting player name for socket:', socketId);
+    for (const [playerName, socket] of this.playerSockets.entries()) {
+      if (socket === socketId) {
+        console.log('Found player:', playerName);
+        return playerName;
+      }
+    }
+    console.log('No player found for socket:', socketId);
+    return null;
+  }
+
+  async disconnectAllPlayers(pin) {
+    console.log('Disconnecting all players for quiz:', pin);
+    const gameState = await this.getGameState(pin);
+    if (!gameState) {
+      console.error('Quiz not found for pin:', pin);
+      return { success: false, error: 'Quiz not found' };
+    }
+
+    const initialPlayerCount = gameState.players.length;
+    
+    // Keep only admin in the players list
+    gameState.players = gameState.players.filter(player => 
+      typeof player === 'string' ? player === 'admin' : player.name === 'admin'
+    );
+    
+    // Reset scores except for admin
+    const newScores = new Map();
+    for (const [name, score] of gameState.scores.entries()) {
+      if (name === 'admin') {
+        newScores.set(name, score);
+      }
+    }
+    gameState.scores = newScores;
+
+    await gameStateManager.saveGameState(pin, gameState);
+    
+    console.log(`Disconnected ${initialPlayerCount - gameState.players.length} players from quiz ${pin}`);
+    return { success: true, players: gameState.players };
   }
 
   /**
