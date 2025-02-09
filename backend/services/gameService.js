@@ -136,7 +136,7 @@ class GameService {
           .map(([player, score]) => ({ player, score }))
           .sort((a, b) => b.score - a.score)[0]?.player,
         finalLeaderboard: Array.from(gameState.scores.entries())
-          .map(([player, score]) => ({ player, score }))
+          .map(([name, score]) => ({ name, score }))
           .sort((a, b) => b.score - a.score)
       };
     }
