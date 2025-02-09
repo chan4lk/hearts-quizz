@@ -110,6 +110,31 @@ class Quiz {
       throw error;
     }
   }
+
+  static async updateQuestions(quizId, questions) {
+    return withTransaction(async () => {
+      // Delete existing questions
+      await db.run('DELETE FROM questions WHERE quiz_id = ?', [quizId]);
+
+      // Insert updated questions
+      for (let i = 0; i < questions.length; i++) {
+        const q = questions[i];
+        await db.run(`
+          INSERT INTO questions (
+            quiz_id, text, image_url, time_limit, points,
+            options, correct_answer, order_index
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+          quizId, q.text, q.imageUrl || '/quiz.jpeg', q.timeLimit || 30, q.points || 1000,
+          JSON.stringify(q.options), q.correctAnswer, i
+        ]);
+      }
+
+      // Return updated questions
+      return this.getQuizQuestions(quizId);
+    });
+  }
 }
 
 module.exports = Quiz;

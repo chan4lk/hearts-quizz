@@ -134,4 +134,31 @@ router.get('/', authMiddleware, async (req, res) => {
   }
 });
 
+// Update quiz questions
+router.put('/:quizId/questions', authMiddleware, async (req, res) => {
+  try {
+    const quizId = req.params.quizId;
+    const { questions } = req.body;
+
+    // Validate input
+    if (!Array.isArray(questions)) {
+      return res.status(400).json({ error: 'Questions must be an array' });
+    }
+
+    // Update questions
+    const updatedQuestions = await Quiz.updateQuestions(quizId, questions);
+
+    res.json(updatedQuestions.map(q => ({
+      text: q.text,
+      options: q.options,
+      image: q.image_url,
+      timeLimit: q.time_limit,
+      points: q.points
+    })));
+  } catch (error) {
+    console.error('Error updating quiz questions:', error);
+    res.status(500).json({ error: 'Failed to update quiz questions' });
+  }
+});
+
 module.exports = router;
