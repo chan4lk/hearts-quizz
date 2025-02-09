@@ -1,52 +1,75 @@
 import React from 'react';
+import { Button, TextField, MenuItem } from '@mui/material';
 
-const QuizBasicForm = ({ quiz, onChange }) => {
+const QuizBasicForm = ({ quiz, onInputChange, onNext }) => {
+  const categories = [
+    { value: 'general', label: 'General Knowledge' },
+    { value: 'science', label: 'Science' },
+    { value: 'history', label: 'History' },
+    { value: 'geography', label: 'Geography' },
+    { value: 'sports', label: 'Sports' },
+    { value: 'entertainment', label: 'Entertainment' },
+    { value: 'technology', label: 'Technology' },
+    { value: 'other', label: 'Other' }
+  ];
+
+  const isFormValid = quiz.title && quiz.description && quiz.category;
+
   return (
-    <div className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Quiz Title
-        </label>
-        <input
-          type="text"
-          value={quiz.title}
-          onChange={(e) => onChange('title', e.target.value)}
-          className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
-          placeholder="Enter quiz title"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Description
-        </label>
-        <textarea
-          value={quiz.description}
-          onChange={(e) => onChange('description', e.target.value)}
-          className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
-          placeholder="Enter quiz description"
-          rows="3"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Category
-        </label>
-        <select
-          value={quiz.category}
-          onChange={(e) => onChange('category', e.target.value)}
-          className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">Select a category</option>
-          <option value="general">General Knowledge</option>
-          <option value="science">Science</option>
-          <option value="history">History</option>
-          <option value="geography">Geography</option>
-          <option value="sports">Sports</option>
-          <option value="entertainment">Entertainment</option>
-          <option value="technology">Technology</option>
-          <option value="other">Other</option>
-        </select>
-      </div>
+    <div className="max-w-2xl mx-auto space-y-6">
+      <TextField
+        fullWidth
+        label="Quiz Title"
+        value={quiz.title}
+        onChange={(e) => onInputChange('title', e.target.value)}
+        placeholder="Enter quiz title"
+        variant="outlined"
+      />
+
+      <TextField
+        fullWidth
+        label="Description"
+        value={quiz.description}
+        onChange={(e) => onInputChange('description', e.target.value)}
+        placeholder="Enter quiz description"
+        multiline
+        rows={3}
+        variant="outlined"
+      />
+
+      <TextField
+        fullWidth
+        select
+        label="Category"
+        value={quiz.category}
+        onChange={(e) => onInputChange('category', e.target.value)}
+        variant="outlined"
+      >
+        <MenuItem value="">
+          <em>Select a category</em>
+        </MenuItem>
+        {categories.map((category) => (
+          <MenuItem key={category.value} value={category.value}>
+            {category.label}
+          </MenuItem>
+        ))}
+      </TextField>
+
+      <Button
+        variant="contained"
+        fullWidth
+        onClick={onNext}
+        disabled={!isFormValid}
+        className="mt-6"
+      >
+        Continue to Teams
+      </Button>
+
+      {!isFormValid && (
+        <p className="text-red-500 text-sm text-center mt-2">
+          Please fill in all fields to continue
+        </p>
+      )}
     </div>
   );
 };

@@ -16,7 +16,11 @@ class GameStateService {
     await this.ensureInitialized();
     
     const quiz_id = state.quiz_id || null;
-    const stateJson = JSON.stringify(state);
+    const stateJson = JSON.stringify({
+      ...state,
+      scores: state.scores instanceof Map ? Object.fromEntries(state.scores) : state.scores,
+      answers: state.answers instanceof Map ? Object.fromEntries(state.answers) : state.answers
+    });
     
     await db.run(
       `INSERT OR REPLACE INTO game_states (pin, quiz_id, state) 
@@ -64,6 +68,13 @@ class GameStateService {
       players.map(p => [p.player_name, p.score])
     );
 
+    // Convert answers back to Map if they exist
+    if (gameState.answers) {
+      gameState.answers = new Map(Object.entries(gameState.answers));
+    } else {
+      gameState.answers = new Map();
+    }
+
     return gameState;
   }
 
@@ -103,9 +114,13 @@ class GameStateService {
       gameState.scores = new Map(
         players.map(p => [p.player_name, p.score])
       );
-      
-      // Add pin to the game state
-      gameState.pin = state.pin;
+
+      // Convert answers back to Map if they exist
+      if (gameState.answers) {
+        gameState.answers = new Map(Object.entries(gameState.answers));
+      } else {
+        gameState.answers = new Map();
+      }
       
       gameStates.push(gameState);
     }

@@ -2,25 +2,15 @@ const express = require('express');
 const router = express.Router();
 const gameService = require('../services/gameService');
 const authMiddleware = require('../middleware/auth');
-const db = require('../db');
+const Quiz = require('../models/Quiz');
 
 // Get quiz by pin
 router.get('/pin/:pin', async (req, res) => {
   try {
-    const quiz = await db.get('SELECT * FROM quizzes WHERE pin = ?', [req.params.pin]);
+    const quiz = await Quiz.findByPin(req.params.pin);
     if (!quiz) {
       return res.status(404).json({ error: 'Quiz not found' });
     }
-
-    // Get questions for the quiz
-    const questions = await db.all('SELECT * FROM questions WHERE quiz_id = ?', [quiz.id]);
-    quiz.questions = questions.map(q => ({
-      text: q.text,
-      options: JSON.parse(q.options),
-      image: q.image,
-      correctAnswer: q.correct_answer,
-      timeLimit: q.timeLimit
-    }));
 
     // Initialize game state if it doesn't exist
     if (!gameService.getGameState(req.params.pin)) {
@@ -28,13 +18,16 @@ router.get('/pin/:pin', async (req, res) => {
         questions: quiz.questions.map(q => ({
           text: q.text,
           options: q.options,
-          image: q.image,
-          correctAnswer: q.correctAnswer,
-          timeLimit: q.timeLimit
+          image: q.image_url,
+          correctAnswer: q.correct_answer,
+          timeLimit: q.time_limit,
+          points: q.points
         })),
+        teams: quiz.teams,
         isActive: false,
         currentQuestion: -1,
         scores: new Map(),
+        teamScores: new Map(quiz.teams.map(team => [team.id, 0])),
         answers: new Map()
       });
     }
@@ -43,12 +36,16 @@ router.get('/pin/:pin', async (req, res) => {
     const safeQuiz = {
       id: quiz.id,
       title: quiz.title,
+      description: quiz.description,
+      category: quiz.category,
       pin: quiz.pin,
+      teams: quiz.teams,
       questions: quiz.questions.map(q => ({
         text: q.text,
         options: q.options,
-        image: q.image,
-        timeLimit: q.timeLimit
+        image: q.image_url,
+        timeLimit: q.time_limit,
+        points: q.points
       }))
     };
 
@@ -62,87 +59,78 @@ router.get('/pin/:pin', async (req, res) => {
 // Create a new quiz
 router.post('/', authMiddleware, async (req, res) => {
   try {
-    const { title, questions } = req.body;
-    const pin = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit pin
+    const { title, description, category, teams, questions } = req.body;
 
-    // Insert quiz
-    const result = await db.run(
-      'INSERT INTO quizzes (title, pin, user_id) VALUES (?, ?, ?)',
-      [title, pin, req.user.id]
-    );
-    const quizId = result.lastID;
-
-    // Insert questions
-    for (const q of questions) {
-      await db.run(
-        'INSERT INTO questions (quiz_id, text, options, correct_answer, image, timeLimit) VALUES (?, ?, ?, ?, ?, ?)',
-        [quizId, q.text, JSON.stringify(q.options), q.correctAnswer, q.image, q.timeLimit || 30]
-      );
-    }
-
-    // Get the created quiz with questions
-    const quiz = await db.get('SELECT * FROM quizzes WHERE id = ?', [quizId]);
-    quiz.questions = await db.all('SELECT * FROM questions WHERE quiz_id = ?', [quizId]);
-    
-    // Initialize game state
-    gameService.initializeQuiz(pin, {
-      questions: quiz.questions.map(q => ({
-        text: q.text,
-        options: JSON.parse(q.options),
-        image: q.image,
-        correctAnswer: q.correct_answer,
-        timeLimit: q.timeLimit
+    // Create quiz with teams and questions
+    const quiz = await Quiz.create({
+      title,
+      description,
+      category,
+      teams: teams.map(team => ({
+        name: team.name,
+        color: team.color
       })),
+      questions: questions.map((q, index) => ({
+        text: q.text,
+        imageUrl: q.imageUrl,
+        timeLimit: q.timeLimit || 30,
+        points: q.points || 1000,
+        options: q.options,
+        correctAnswer: q.correctAnswer,
+        orderIndex: index
+      }))
+    });
+
+    // Get the full quiz data
+    const fullQuiz = await Quiz.findByPin(quiz.pin);
+
+    // Initialize game state
+    gameService.initializeQuiz(quiz.pin, {
+      questions: fullQuiz.questions.map(q => ({
+        text: q.text,
+        options: q.options,
+        image: q.image_url,
+        correctAnswer: q.correct_answer,
+        timeLimit: q.time_limit,
+        points: q.points
+      })),
+      teams: fullQuiz.teams,
       isActive: false,
       currentQuestion: -1,
       scores: new Map(),
+      teamScores: new Map(fullQuiz.teams.map(team => [team.id, 0])),
       answers: new Map()
     });
-    
-    res.status(201).json(quiz);
+
+    res.json({
+      id: fullQuiz.id,
+      pin: fullQuiz.pin,
+      title: fullQuiz.title,
+      description: fullQuiz.description,
+      category: fullQuiz.category,
+      teams: fullQuiz.teams,
+      questions: fullQuiz.questions.map(q => ({
+        text: q.text,
+        options: q.options,
+        image: q.image_url,
+        timeLimit: q.time_limit,
+        points: q.points
+      }))
+    });
   } catch (error) {
     console.error('Error creating quiz:', error);
     res.status(500).json({ error: 'Failed to create quiz' });
   }
 });
 
-// Get all quizzes for user
+// Get user's quizzes
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const quizzes = await db.all(
-      `SELECT q.*, COUNT(qu.id) as question_count 
-       FROM quizzes q 
-       LEFT JOIN questions qu ON q.id = qu.quiz_id 
-       WHERE q.user_id = ? 
-       GROUP BY q.id`,
-      [req.user.id]
-    );
+    const quizzes = await Quiz.findAll();
     res.json(quizzes);
   } catch (error) {
     console.error('Error fetching quizzes:', error);
     res.status(500).json({ error: 'Failed to fetch quizzes' });
-  }
-});
-
-// Deactivate a quiz
-router.post('/:pin/deactivate', authMiddleware, async (req, res) => {
-  try {
-    const quiz = await db.get(
-      'SELECT * FROM quizzes WHERE pin = ? AND user_id = ?',
-      [req.params.pin, req.user.id]
-    );
-    
-    if (!quiz) {
-      return res.status(404).json({ error: 'Quiz not found' });
-    }
-
-    // Clean up game state
-    gameService.cleanupQuiz(req.params.pin);
-    
-    res.json({ message: 'Quiz deactivated' });
-  } catch (error) {
-    console.error('Error deactivating quiz:', error);
-    res.status(500).json({ error: 'Failed to deactivate quiz' });
   }
 });
 

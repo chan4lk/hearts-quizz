@@ -27,3 +27,8 @@ For security reasons, it's recommended to:
 1. Always set ADMIN_PASSWORD in production
 2. Use a strong password
 3. Keep your .env file secure and never commit it to version control
+
+## Recreate DB
+```shell
+rm -f backend/db/khoot.sqlite && node backend/scripts/init-db.js
+```

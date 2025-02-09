@@ -1,12 +1,17 @@
 import React from 'react';
 
-const StepIndicator = ({ steps, currentStep, onStepClick }) => {
+const StepIndicator = ({ currentStep, totalSteps }) => {
+  const steps = [
+    { title: 'Basic Info' },
+    { title: 'Teams' },
+    { title: 'Questions' }
+  ];
+
   return (
     <div className="flex justify-between items-center mb-8">
       {steps.map((step, index) => (
-        <button
+        <div
           key={index}
-          onClick={() => onStepClick(index)}
           className={`flex-1 text-center py-2 relative ${
             currentStep === index
               ? 'border-b-2 border-blue-500 text-blue-500'
@@ -36,7 +41,7 @@ const StepIndicator = ({ steps, currentStep, onStepClick }) => {
               }`}
             />
           )}
-        </button>
+        </div>
       ))}
     </div>
   );
