@@ -4,17 +4,21 @@ import useSocket from '../hooks/useSocket';
 import ProgressBar from '../components/common/ProgressBar';
 import Header from '../components/Header';
 import GameOverMessage from '../components/GameOverMessage';
+import TeamLeaderboard from '../components/game/TeamLeaderboard'; // Import TeamLeaderboard component
 
 const GamePage = () => {
   const { pin } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const playerName = location.state?.playerName;
+  const playerTeam = location.state?.team;
+  
   const [currentQuestion, setCurrentQuestion] = useState(null);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [answered, setAnswered] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [leaderboard, setLeaderboard] = useState([]);
+  const [teamScores, setTeamScores] = useState([]);
   const [timeLeft, setTimeLeft] = useState(null);
   const [error, setError] = useState('');
   const [showCorrectAnswer, setShowCorrectAnswer] = useState(false);
@@ -23,14 +27,49 @@ const GamePage = () => {
 
   const { socket, isConnected } = useSocket();
 
+  const calculateTeamScores = (leaderboardData) => {
+    const teamScores = new Map();
+      
+    // First group players by team and calculate team totals
+    leaderboardData.forEach(player => {
+      if (player.team) {
+        const currentTeam = teamScores.get(player.team.id) || {
+          ...player.team,
+          players: [],
+          totalScore: 0,
+          averageScore: 0
+        };
+        
+        currentTeam.players.push({
+          name: player.name,
+          score: player.score
+        });
+        
+        currentTeam.totalScore += player.score;
+        console.log('Total score:', currentTeam.totalScore);
+        currentTeam.averageScore = Math.round(currentTeam.totalScore / currentTeam.players.length);
+        
+        teamScores.set(player.team.id, currentTeam);
+      }
+    });
+
+    // Convert to array and sort by total score
+    return Array.from(teamScores.values())
+      .sort((a, b) => b.totalScore - a.totalScore);
+  };
+
   useEffect(() => {
-    if (!socket || !isConnected || !playerName || !pin) {
+    if (!socket || !isConnected || !playerName || !pin || !playerTeam) {
       navigate('/');
       return;
     }
 
     console.log('Setting up game socket listeners and joining quiz');
-    socket.emit('join_quiz', { pin, playerName });
+    socket.emit('join_quiz', { 
+      pin, 
+      playerName,
+      teamId: playerTeam.id 
+    });
 
     socket.on('quiz_error', ({ message }) => {
       console.error('Quiz error:', message);
@@ -62,14 +101,18 @@ const GamePage = () => {
     });
 
     socket.on('show_leaderboard', ({ leaderboard }) => {
-      console.log('Showing leaderboard:', leaderboard);
+      const sortedTeams = calculateTeamScores(leaderboard);
       setLeaderboard(leaderboard);
+      setTeamScores(sortedTeams);
       setShowLeaderboard(true);
     });
 
     socket.on('quiz_end', ({ finalLeaderboard, winner }) => {
       console.log('Quiz ended, final leaderboard:', finalLeaderboard, 'Winner:', winner);
+      
+      const sortedTeams = calculateTeamScores(finalLeaderboard);
       setLeaderboard(finalLeaderboard);
+      setTeamScores(sortedTeams);
       setShowLeaderboard(true);
       setCurrentQuestion(null);
       setWinner(winner);
@@ -84,7 +127,7 @@ const GamePage = () => {
       socket.off('show_leaderboard');
       socket.off('quiz_end');
     };
-  }, [socket, isConnected, playerName, pin, navigate]);
+  }, [socket, isConnected, playerName, pin, navigate, playerTeam]);
 
   const handleAnswerSelect = (answer) => {
     if (answered || !currentQuestion) return;
@@ -140,27 +183,49 @@ const GamePage = () => {
         </div>
       ) : showLeaderboard ? (
         <div className="p-4">
-          <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-bold text-center mb-6">Leaderboard</h2>
-            <div className="space-y-4">
-              {(leaderboard || []).map((player, index) => (
-                <div
-                  key={player.name}
-                  className="flex justify-between items-center p-3 bg-gray-50 rounded"
-                >
-                  <div className="flex items-center">
-                    <span className="font-medium text-gray-600 mr-3">
-                      {index + 1}.
-                    </span>
-                    <span className="font-medium">
-                      {player.name}
-                    </span>
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-2xl font-bold text-center mb-6">Game Results</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div>
+                <h3 className="text-xl font-semibold mb-4">Team Standings</h3>
+                <TeamLeaderboard teams={teamScores} players={leaderboard} />
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold mb-4">Individual Rankings</h3>
+                <div className="bg-white rounded-lg shadow-md p-4">
+                  <div className="space-y-3">
+                    {leaderboard.map((player, index) => (
+                      <div
+                        key={player.name}
+                        className="flex justify-between items-center p-3 bg-gray-50 rounded"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <span className="font-medium text-gray-600">
+                            {index + 1}.
+                          </span>
+                          <div>
+                            <span className="font-medium">{player.name}</span>
+                            {player.team && (
+                              <span
+                                className="ml-2 text-sm px-2 py-1 rounded"
+                                style={{
+                                  backgroundColor: player.team.color + '22',
+                                  color: player.team.color
+                                }}
+                              >
+                                {player.team.name}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <span className="font-bold text-blue-600">
+                          {player.score} pts
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                  <span className="font-bold text-blue-600">
-                    {player.score} pts
-                  </span>
                 </div>
-              ))}
+              </div>
             </div>
           </div>
         </div>

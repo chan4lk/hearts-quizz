@@ -26,7 +26,8 @@ class GameService {
       currentQuestion: -1,
       players: [],
       scores: new Map(),
-      answers: new Map()
+      answers: new Map(),
+      teams: initialState.teams || []
     };
 
     await gameStateManager.saveGameState(pin, gameState);
@@ -49,8 +50,8 @@ class GameService {
     return gameState;
   }
 
-  async joinQuiz(pin, playerName) {
-    console.log('Joining quiz:', { pin, playerName });
+  async joinQuiz(pin, playerName, teamId = null) {
+    console.log('Joining quiz:', { pin, playerName, teamId });
     
     let gameState = await gameStateManager.getGameState(pin);
     
@@ -72,7 +73,15 @@ class GameService {
         timeLimit: q.timeLimit || this.QUESTION_TIME_LIMIT
       }));
 
-      gameState = await this.initializeQuiz(pin, { questions: formattedQuestions });
+      const teams = await db.all('SELECT * FROM teams WHERE quiz_id = ?', [quiz.id]);
+      gameState = await this.initializeQuiz(pin, { 
+        questions: formattedQuestions,
+        teams: teams.map(team => ({
+          id: team.id,
+          name: team.name,
+          color: team.color
+        }))
+      });
     }
 
     if (!gameState) {
@@ -80,14 +89,25 @@ class GameService {
     }
 
     // Don't add admin to the players list
-    if (playerName !== 'admin' && !gameState.players.includes(playerName)) {
-      gameState.players.push(playerName);
+    if (playerName !== 'admin' && !gameState.players.find(p => p.name === playerName)) {
+      // Find the team if teamId is provided
+      const team = teamId ? gameState.teams?.find(t => t.id === teamId) : null;
+      
+      // Add player with team info
+      const player = {
+        name: playerName,
+        team: team || null
+      };
+      
+      gameState.players.push(player);
+      gameState.scores.set(playerName, 0);
       await gameStateManager.saveGameState(pin, gameState);
     }
 
     return { 
       success: true, 
-      players: gameState.players
+      players: gameState.players,
+      teams: gameState.teams
     };
   }
 
@@ -135,9 +155,7 @@ class GameService {
         winner: Array.from(gameState.scores.entries())
           .map(([player, score]) => ({ player, score }))
           .sort((a, b) => b.score - a.score)[0]?.player,
-        finalLeaderboard: Array.from(gameState.scores.entries())
-          .map(([name, score]) => ({ name, score }))
-          .sort((a, b) => b.score - a.score)
+        finalLeaderboard: this.buildLeaderboard(gameState)
       };
     }
 
@@ -198,6 +216,19 @@ class GameService {
     };
   }
 
+  async endQuiz(pin) {
+    const gameState = await this.getGameState(pin);
+    if (!gameState) return null;
+
+    const finalLeaderboard = this.buildLeaderboard(gameState);
+    const winner = finalLeaderboard[0]?.name || null;
+
+    return {
+      finalLeaderboard,
+      winner
+    };
+  }
+
   async endQuestion(pin) {
     const gameState = await this.getGameState(pin);
     if (!gameState || !gameState.isActive) return null;
@@ -205,28 +236,19 @@ class GameService {
     const currentQ = gameState.questions[gameState.currentQuestion];
     if (!currentQ) return null;
 
-    // Calculate leaderboard with time-based sorting
-    const leaderboard = Array.from(gameState.scores.entries())
-      .map(([name, totalScore]) => {
-        const answer = gameState.answers.get(name);
-        return {
-          name,
-          score: totalScore,
-          lastAnswer: answer || { score: 0, timeBonus: 0, isCorrect: false }
-        };
-      })
-      .sort((a, b) => {
-        // First sort by total score
-        if (b.score !== a.score) return b.score - a.score;
-        // Then by correctness of last answer
-        if (b.lastAnswer.isCorrect !== a.lastAnswer.isCorrect) return b.lastAnswer.isCorrect ? 1 : -1;
-        // Finally by time bonus of last answer
-        return b.lastAnswer.timeBonus - a.lastAnswer.timeBonus;
-      });
+    return {
+      leaderboard: this.buildLeaderboard(gameState),
+      correctAnswer: currentQ.correctAnswer
+    };
+  }
+
+  async getQuestionEndData(pin) {
+    const gameState = await this.getGameState(pin);
+    if (!gameState) return null;
 
     return {
-      leaderboard,
-      correctAnswer: currentQ.correctAnswer
+      leaderboard: this.buildLeaderboard(gameState),
+      correctAnswer: gameState.questions[gameState.currentQuestion]?.correctAnswer
     };
   }
 
@@ -276,34 +298,6 @@ class GameService {
     }, this.QUESTION_TIME_LIMIT * 1000));
 
     return { playerData: baseQuestionData, adminData: adminQuestionData };
-  }
-
-  async getQuestionEndData(pin) {
-    const gameState = await this.getGameState(pin);
-    if (!gameState || !gameState.isActive) return null;
-
-    const currentAnswers = gameState.answers.get(gameState.currentQuestion);
-    const currentQuestion = gameState.questions[gameState.currentQuestion];
-
-    // Calculate answer statistics
-    const answerStats = Array(4).fill(0);
-    currentAnswers.forEach(({ answer }) => {
-      if (answer >= 0 && answer < 4) {
-        answerStats[answer]++;
-      }
-    });
-
-    // Get current leaderboard
-    const leaderboard = Array.from(gameState.scores.entries())
-      .map(([name, score]) => ({ name, score }))
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 5);
-
-    return {
-      leaderboard,
-      correctAnswer: currentQuestion.correctAnswer,
-      answerStats
-    };
   }
 
   async getPlayerList(pin) {
@@ -459,6 +453,43 @@ class GameService {
       console.error('Error restoring game states:', err);
       throw err;
     }
+  }
+
+  /**
+   * Builds a standardized leaderboard structure from game state
+   * @param {Object} gameState Current game state
+   * @returns {Array} Leaderboard data with player scores and team information
+   */
+  buildLeaderboard(gameState) {
+    if (!gameState || !gameState.scores) return [];
+
+    return Array.from(gameState.scores.entries())
+      .map(([name, totalScore]) => {
+        const answer = gameState.answers.get(name);
+        const player = gameState.players.find(p => p.name === name);
+        
+        // Ensure we have the complete team object
+        const team = player?.team ? {
+          id: player.team.id,
+          name: player.team.name,
+          color: player.team.color
+        } : null;
+
+        return {
+          name,
+          score: totalScore,
+          team,
+          lastAnswer: answer || { score: 0, timeBonus: 0, isCorrect: false }
+        };
+      })
+      .sort((a, b) => {
+        // First sort by total score
+        if (b.score !== a.score) return b.score - a.score;
+        // Then by correctness of last answer
+        if (b.lastAnswer.isCorrect !== a.lastAnswer.isCorrect) return b.lastAnswer.isCorrect ? 1 : -1;
+        // Finally by time bonus of last answer
+        return b.lastAnswer.timeBonus - a.lastAnswer.timeBonus;
+      });
   }
 }
 

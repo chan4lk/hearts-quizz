@@ -146,30 +146,6 @@ const JoinPage = () => {
 
           <form onSubmit={handleJoinSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Your Team
-              </label>
-              <div className="grid grid-cols-2 gap-4">
-                {quiz.teams.map((team) => (
-                  <button
-                    key={team.id}
-                    type="button"
-                    onClick={() => setSelectedTeam(team)}
-                    className={`p-4 rounded-lg border-2 transition-all ${
-                      selectedTeam?.id === team.id
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-blue-200'
-                    }`}
-                    style={{ backgroundColor: selectedTeam?.id === team.id ? team.color + '20' : 'white' }}
-                  >
-                    <div className="w-8 h-8 rounded-full mx-auto mb-2" style={{ backgroundColor: team.color }} />
-                    <div className="text-center font-medium">{team.name}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
               <label
                 htmlFor="name"
                 className="block text-sm font-medium text-gray-700 mb-2"
@@ -187,13 +163,61 @@ const JoinPage = () => {
               />
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Your Team
+              </label>
+              <div className="grid grid-cols-2 gap-4">
+                {quiz.teams.map((team) => (
+                  <button
+                    key={team.id}
+                    type="button"
+                    onClick={() => setSelectedTeam(team)}
+                    className={`p-4 rounded-lg border-2 transition-all duration-200 ${
+                      selectedTeam?.id === team.id
+                        ? 'shadow-lg transform scale-105'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    style={{
+                      borderColor: selectedTeam?.id === team.id ? team.color : undefined,
+                      backgroundColor: selectedTeam?.id === team.id ? `${team.color}22` : undefined
+                    }}
+                  >
+                    <div className="text-center">
+                      <div
+                        className={`w-10 h-10 mx-auto rounded-full mb-2 transition-all duration-200 ${
+                          selectedTeam?.id === team.id ? 'transform scale-110' : ''
+                        }`}
+                        style={{ 
+                          backgroundColor: selectedTeam?.id === team.id ? team.color : team.color + '33'
+                        }}
+                      />
+                      <div 
+                        className={`font-medium transition-all duration-200 ${
+                          selectedTeam?.id === team.id ? 'text-lg' : 'text-base'
+                        }`}
+                        style={{ color: team.color }}
+                      >
+                        {team.name}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {error && (
               <div className="text-red-500 text-sm text-center">{error}</div>
             )}
 
             <button
               type="submit"
-              className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-colors"
+              disabled={!name || !selectedTeam}
+              className={`w-full py-3 px-4 text-white font-medium rounded-lg transition-colors ${
+                !name || !selectedTeam
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
+              }`}
             >
               Join Game
             </button>

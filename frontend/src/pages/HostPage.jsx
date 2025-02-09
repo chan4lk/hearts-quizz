@@ -174,9 +174,22 @@ const HostPage = () => {
                           key={index}
                           className="bg-gray-100 rounded p-3 text-center"
                         >
-                          <span className="text-gray-800 font-medium">
-                            {player.playerName || player}
-                          </span>
+                          <div className="flex flex-col items-center">
+                            <span className="text-gray-800 font-medium">
+                              {typeof player === 'string' ? player : player.name}
+                            </span>
+                            {typeof player !== 'string' && player.team && (
+                              <span
+                                className="text-sm px-2 py-1 rounded mt-1"
+                                style={{
+                                  backgroundColor: player.team.color + '22',
+                                  color: player.team.color
+                                }}
+                              >
+                                {player.team.name}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -248,18 +261,31 @@ const HostPage = () => {
                     <div className="bg-white rounded-lg shadow-lg p-6">
                       <h2 className="text-2xl font-bold mb-4 text-center">Leaderboard</h2>
                       <div className="space-y-4">
-                        {leaderboard.map(({ name, player, score }, index) => (
+                        {leaderboard.map((player, index) => (
                           <div
-                            key={player}
+                            key={player.name}
                             className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                           >
                             <div className="flex items-center">
                               <span className="text-lg font-semibold mr-4">
                                 #{index + 1}
                               </span>
-                              <span className="text-lg">{ name ?? player}</span>
+                              <div className="flex items-center">
+                                <span className="text-lg">{player.name}</span>
+                                {player.team && (
+                                  <span
+                                    className="ml-2 text-sm px-2 py-1 rounded"
+                                    style={{
+                                      backgroundColor: player.team.color + '22',
+                                      color: player.team.color
+                                    }}
+                                  >
+                                    {player.team.name}
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                            <span className="text-lg font-semibold">{score} pts</span>
+                            <span className="text-lg font-semibold">{player.score} pts</span>
                           </div>
                         ))}
                       </div>
@@ -295,12 +321,27 @@ const HostPage = () => {
                   <div className="mt-8">
                     <h3 className="text-xl font-semibold mb-4">Players ({players.length})</h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                      {players.map((player) => (
+                      {players.map((player, index) => (
                         <div
-                          key={player}
+                          key={index}
                           className="bg-white rounded-lg shadow p-3 text-center"
                         >
-                          {player}
+                          <div className="flex flex-col items-center">
+                            <span className="text-gray-800 font-medium">
+                              {typeof player === 'string' ? player : player.name}
+                            </span>
+                            {typeof player !== 'string' && player.team && (
+                              <span
+                                className="text-sm px-2 py-1 rounded mt-1"
+                                style={{
+                                  backgroundColor: player.team.color + '22',
+                                  color: player.team.color
+                                }}
+                              >
+                                {player.team.name}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>

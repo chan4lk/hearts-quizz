@@ -53,8 +53,8 @@ function socketHandler(io) {
     // Track which room/quiz this socket is in
     let currentPin = null;
 
-    socket.on('join_quiz', async ({ pin, playerName }) => {
-      console.log('Join quiz request:', { pin, playerName });
+    socket.on('join_quiz', async ({ pin, playerName, teamId }) => {
+      console.log('Join quiz request:', { pin, playerName, teamId });
       try {
         // Get quiz from database
         const quiz = await db.get('SELECT * FROM quizzes WHERE pin = ?', [pin]);
@@ -68,7 +68,7 @@ function socketHandler(io) {
         currentPin = pin;
 
         // Add player to game
-        const result = await gameService.joinQuiz(pin, playerName);
+        const result = await gameService.joinQuiz(pin, playerName, teamId);
         if (!result.success) {
           socket.emit('quiz_error', { message: result.error });
           return;
