@@ -68,13 +68,27 @@ const AdminPage = () => {
     }
   };
 
-  const handleQuestionsUpdated = (updatedQuestions) => {
-    setQuizzes(quizzes.map(quiz => 
-      quiz.id === editingQuizId 
-        ? { ...quiz, questions: updatedQuestions }
-        : quiz
-    ));
-    setEditingQuizId(null);
+  const handleQuestionsUpdated = async (updatedQuestions) => {
+    try {
+      // Refresh the quiz list to get updated question count
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/api/quizzes`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      setQuizzes(response.data);
+      setEditingQuizId(null);
+    } catch (error) {
+      console.error('Error refreshing quiz list:', error);
+      // Still update the local state even if refresh fails
+      setQuizzes(quizzes.map(quiz => 
+        quiz.id === editingQuizId 
+          ? { ...quiz, question_count: updatedQuestions.length }
+          : quiz
+      ));
+      setEditingQuizId(null);
+    }
   };
 
   const handleLogout = () => {
