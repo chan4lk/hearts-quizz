@@ -4,6 +4,7 @@ import useSocket from '../hooks/useSocket';
 import axios from 'axios';
 import { API_URL } from '../config/env';
 import Header from '../components/Header';
+import GameOverMessage from '../components/GameOverMessage';
 
 const HostPage = () => {
   const { pin } = useParams();
@@ -114,6 +115,7 @@ const HostPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header userName="Host" />
+      {(!currentQuestion && winner)  && <GameOverMessage winner={winner} />} 
       <div className="p-4">
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-lg shadow-md p-6">
@@ -311,6 +313,7 @@ const HostPage = () => {
       </div>
     </div>
   );
+  winner && <GameOverMessage winner={winner} />
 };
 
 export default HostPage;

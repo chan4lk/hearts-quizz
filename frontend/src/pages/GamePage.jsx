@@ -3,6 +3,7 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import useSocket from '../hooks/useSocket';
 import ProgressBar from '../components/common/ProgressBar';
 import Header from '../components/Header';
+import GameOverMessage from '../components/GameOverMessage';
 
 const GamePage = () => {
   const { pin } = useParams();
@@ -119,14 +120,7 @@ const GamePage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header userName={playerName} />
-      {(!currentQuestion && winner) && (
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-lg shadow-md p-6 my-4 text-center">
-            <h2 className="text-2xl font-bold mb-4">Game Over!</h2>
-            <p className="text-lg">Winner: {winner?.name ?? winner}</p>
-          </div>
-        </div>
-      )}
+      {(!currentQuestion && winner)  && <GameOverMessage winner={winner} />}
       {error ? (
         <div className="p-4">
           <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
