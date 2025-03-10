@@ -157,7 +157,7 @@ router.put('/:quizId/questions', authMiddleware, async (req, res) => {
     })));
   } catch (error) {
     console.error('Error updating quiz questions:', error);
-    res.status(500).json({ error: 'Failed to update quiz questions' });
+    res.status(500).json({ error });
   }
 });
 
