@@ -5,6 +5,8 @@ import StepIndicator from '../components/common/StepIndicator';
 import QuizCreationSteps from '../components/quiz/QuizCreationSteps';
 import { getStepValidator } from '../utils/quizValidation';
 import { Alert } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+
 
 const INITIAL_QUIZ_STATE = {
   title: '',
@@ -115,11 +117,18 @@ const CreateQuizPage = () => {
       setError(err.response?.data?.error || 'Failed to create quiz');
     }
   };
-
+  const handleBack = () => {
+    navigate(-1);
+  };
   return (
     <div className="min-h-screen bg-gray-50 py-8">
+       
       <div className="max-w-4xl mx-auto px-4">
+      
         <div className="bg-white rounded-lg shadow p-6">
+        <button className="text-gray-600" onClick={handleBack}>
+              <ArrowBackIcon />
+            </button>
           {error && (
             <Alert severity="error" className="mb-4">
               {error}

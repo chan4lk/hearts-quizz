@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../config/env';
 import EditQuizQuestions from '../components/quiz/EditQuizQuestions';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 const AdminPage = () => {
   const [quizzes, setQuizzes] = useState([]);
@@ -96,6 +97,23 @@ const AdminPage = () => {
     navigate('/admin/login');
   };
 
+  const handleBack = () => {
+    navigate(-1);
+  };const handleDeleteQuiz = async (quizId) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API_URL}/api/quizzes/${quizId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      setQuizzes(quizzes.filter(quiz => quiz.id !== quizId));
+    } catch (error) {
+      console.error('Error deleting quiz:', error);
+      alert('Failed to delete quiz. Please try again.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
@@ -122,7 +140,11 @@ const AdminPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-8">
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-xl shadow-lg p-8 transform transition-all duration-300 hover:shadow-xl">
-          <div className="flex flex-col sm:flex-row justify-between items-center mb-8 space-y-4 sm:space-y-0">
+        <button className="text-gray-600" onClick={handleBack}>
+              <ArrowBackIcon />
+            </button>
+          <div className="flex justify-between items-center mb-8">
+            
             <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">My Quizzes</h1>
             <div className="flex space-x-4">
               <button
@@ -158,6 +180,7 @@ const AdminPage = () => {
             </div>
           ) : (
             <div className="space-y-4">
+              
               {quizzes.map((quiz) => (
                 <div
                   key={quiz.id}
@@ -197,6 +220,16 @@ const AdminPage = () => {
                       </svg>
                       Edit Questions
                     </button>
+                    <button
+  onClick={() => handleDeleteQuiz(quiz.id)}
+  className="bg-red-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-red-700 transform transition-all duration-150 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 flex items-center"
+>
+  <svg className="h-5 w-5 mr-2" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+    <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+  </svg>
+  Delete Questions
+</button>
+                    
                   </div>
                 </div>
               ))}

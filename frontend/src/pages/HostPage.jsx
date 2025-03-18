@@ -5,6 +5,8 @@ import axios from 'axios';
 import { API_URL } from '../config/env';
 import Header from '../components/Header';
 import GameOverMessage from '../components/GameOverMessage';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+
 
 const HostPage = () => {
   const { pin } = useParams();
@@ -145,14 +147,22 @@ const HostPage = () => {
       socket.emit('disconnect_all_players', { pin });
     }
   };
-
+  const handleBack = () => {
+    navigate(-1);
+  };
   return (
     <div className="min-h-screen bg-gray-50">
+      
       <Header userName="Host" />
       {(!currentQuestion && winner)  && <GameOverMessage winner={winner} />} 
       <div className="p-4">
+        
         <div className="max-w-4xl mx-auto">
+          
           <div className="bg-white rounded-lg shadow-md p-6">
+          <button className="text-gray-600" onClick={handleBack}>
+              <ArrowBackIcon />
+            </button>
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-3xl font-bold text-gray-800">
                 Hosting: {quiz?.title}
