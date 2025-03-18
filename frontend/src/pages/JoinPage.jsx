@@ -89,7 +89,7 @@ const JoinPage = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col">
       <Header />
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex  justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex  justify-center p-4">
         <div className="max-w-md w-full">
           
           <div className="bg-white rounded-xl shadow-lg p-8 transform transition-all duration-300 hover:shadow-xl">
