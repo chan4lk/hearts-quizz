@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../config/env';
+import Header from '../components/Header';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 
@@ -15,15 +16,21 @@ const JoinPage = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const handleBack = () => {
+    if (urlPin) {
+      // If we came from a direct PIN URL, go back to the join page
+      navigate('/join');
+    } else {
+      // Otherwise use the browser's back navigation
+      navigate(-1);
+    }
+  };
+
   const handlePinSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    
-    const handleBack = () => {
-      navigate(-1);
-    };
     // Validate input
     const cleanPin = pin.trim();
 
@@ -80,11 +87,13 @@ const JoinPage = () => {
 
   if (!quiz) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col">
+      <Header />
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex  justify-center p-4">
         <div className="max-w-md w-full">
           
           <div className="bg-white rounded-xl shadow-lg p-8 transform transition-all duration-300 hover:shadow-xl">
-          <button className="text-gray-600"onClick={() => navigate('/')}>
+          <button className="text-gray-600" onClick={handleBack}>
             <ArrowBackIcon />
           </button>
             <div className="text-center mb-8">
@@ -141,16 +150,19 @@ const JoinPage = () => {
           </div>
         </div>
       </div>
+      </div>
     );
   }
 
   return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col">
+      <Header />
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         
         <div className="bg-white rounded-xl shadow-lg p-8 transform transition-all duration-300 hover:shadow-xl">
-        <button className="text-gray-600" >
-            <ArrowBackIcon onClick={() => navigate('/')}/>
+        <button className="text-gray-600" onClick={handleBack}>
+            <ArrowBackIcon />
           </button>
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 mb-2">
@@ -239,6 +251,7 @@ const JoinPage = () => {
           </form>
         </div>
       </div>
+    </div>
     </div>
   );
 };

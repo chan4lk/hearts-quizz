@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import StepIndicator from '../components/common/StepIndicator';
+import Header from '../components/Header'
+
 import QuizCreationSteps from '../components/quiz/QuizCreationSteps';
 import { getStepValidator } from '../utils/quizValidation';
 import { Alert, Tooltip, Fade } from '@mui/material';
@@ -85,7 +87,7 @@ const CreateQuizPage = () => {
         ...prev.questions,
         {
           text: '',
-          imageUrl: '/',
+          imageUrl: '/quiz.jpeg',
           timeLimit: 30,
           points: 1000,
           options: ['', '', '', ''],
@@ -134,7 +136,9 @@ const CreateQuizPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col">
+          <Header />
+          <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col">
       <div className="max-w-4xl mx-auto px-4">
         <div className="bg-white rounded-lg shadow-lg p-8 transition-all duration-300">
           <div className="flex justify-between items-center mb-6">
@@ -244,6 +248,7 @@ const CreateQuizPage = () => {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 };

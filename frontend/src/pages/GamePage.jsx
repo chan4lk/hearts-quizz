@@ -161,7 +161,7 @@ const GamePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col">
       <Header userName={playerName} />
       {(!currentQuestion && winner)  && <GameOverMessage winner={winner} />}
       {error ? (
@@ -174,16 +174,16 @@ const GamePage = () => {
           </div>
         </div>
       ) : !isConnected ? (
-        <div className="p-4">
-          <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+        <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col p-4">
+        <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
             <div className="text-gray-600 text-center">
               Waiting for connection...
             </div>
           </div>
         </div>
       ) : showLeaderboard ? (
-        <div className="p-4">
-          <div className="max-w-4xl mx-auto">
+        <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col p-4">
+        <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl font-bold text-center mb-6">Game Results</h2>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
@@ -230,8 +230,8 @@ const GamePage = () => {
           </div>
         </div>
       ) : !currentQuestion ? (
-        <div className="p-4">
-          <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+        <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col p-4">
+        <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
             <h2 className="text-2xl font-bold text-center mb-4">
               Waiting for quiz to start...
             </h2>
@@ -241,8 +241,8 @@ const GamePage = () => {
           </div>
         </div>
       ) : (
-        <div className="p-4">
-          <div className="max-w-2xl mx-auto">
+        <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col p-4">
+        <div className="max-w-2xl mx-auto">
             <div className="bg-white rounded-lg shadow-md p-6">
               {timeLeft !== null && currentQuestion?.timeLimit && (
                 <div className="mb-6">

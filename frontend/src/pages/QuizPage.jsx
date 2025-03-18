@@ -122,8 +122,8 @@ const QuizPage = ({ socket }) => {
 
   if (showLeaderboard) {
     return (
-      <div className="p-8">
-        <h2 className="text-2xl font-bold mb-4">Leaderboard</h2>
+      <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col">
+      <h2 className="text-2xl font-bold mb-4">Leaderboard</h2>
         {leaderboard.map((player, index) => (
           <div
             key={index}
@@ -144,7 +144,7 @@ const QuizPage = ({ socket }) => {
   }
 
   return (
-    <div className="p-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col">
       <div className="mb-4">
         <div className="flex justify-between items-center mb-2">
           <div>Question {currentQuestion.questionNumber} of {currentQuestion.totalQuestions}</div>

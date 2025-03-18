@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../config/env';
+import Header from '../components/Header'
 import EditQuizQuestions from '../components/quiz/EditQuizQuestions';
 import { 
   ArrowBack, 
@@ -184,29 +185,32 @@ const AdminPage = () => {
     );
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
-          <div className="text-red-600 flex items-center justify-center mb-4">
-            <svg className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
+    if (error) {
+      return (
+        
+          <div className="flex items-center justify-center p-4 flex-grow">
+            <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
+              <div className="text-red-600 flex items-center justify-center mb-4">
+                <svg className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-center text-gray-800 mb-2">Error</h3>
+              <p className="text-gray-600 text-center">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="mt-6 w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
           </div>
-          <h3 className="text-xl font-bold text-center text-gray-800 mb-2">Error</h3>
-          <p className="text-gray-600 text-center">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-6 w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
+      );
+    }
 
   return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col">
+          <Header />
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 sm:p-8">
       <div className="max-w-6xl mx-auto">
         <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 transition-all duration-300">
@@ -428,6 +432,8 @@ const AdminPage = () => {
         </div>
       </div>
     </div>
+    </div>
+    
   );
 };
 
