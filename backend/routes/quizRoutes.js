@@ -52,7 +52,7 @@ router.get('/pin/:pin', async (req, res) => {
     res.json(safeQuiz);
   } catch (error) {
     console.error('Error fetching quiz:', error);
-    res.status(500).json({ error: 'Failed to fetch quiz' });
+    res.status(500).json({ error: 'Failed to fetch quiz', stack: error });
   }
 });
 
@@ -119,7 +119,7 @@ router.post('/', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating quiz:', error);
-    res.status(500).json({ error: 'Failed to create quiz' });
+    res.status(500).json({ error: 'Failed to create quiz', stack: error });
   }
 });
 
@@ -130,7 +130,7 @@ router.get('/', authMiddleware, async (req, res) => {
     res.json(quizzes);
   } catch (error) {
     console.error('Error fetching quizzes:', error);
-    res.status(500).json({ error: 'Failed to fetch quizzes' });
+    res.status(500).json({ error: 'Failed to fetch quizzes', stack: error });
   }
 });
 
