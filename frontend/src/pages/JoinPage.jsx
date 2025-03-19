@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../config/env';
@@ -17,6 +17,7 @@ const JoinPage = () => {
   const [quiz, setQuiz] = useState(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const singleTeamMode = true; // Set to true to enable single team mode
 
   const handleBack = () => {
     if (urlPin) {
@@ -27,6 +28,13 @@ const JoinPage = () => {
       navigate(-1);
     }
   };
+
+  // Auto-select the first team when quiz is loaded in single team mode
+  useEffect(() => {
+    if (quiz && quiz.teams && quiz.teams.length > 0 && singleTeamMode) {
+      setSelectedTeam(quiz.teams[0]);
+    }
+  }, [quiz]);
 
   const handlePinSubmit = async (e) => {
     e.preventDefault();
@@ -67,8 +75,8 @@ const JoinPage = () => {
     // Validate input
     const cleanName = name.trim();
 
-    if (!cleanName || !selectedTeam) {
-      setError('Please enter your name and select a team');
+    if (!cleanName) {
+      setError('Please enter your name');
       return;
     }
 
@@ -174,7 +182,7 @@ const JoinPage = () => {
             <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 mb-2">
               {quiz.title}
             </h1>
-            <p className="text-gray-600">Choose your team and enter your name</p>
+            <p className="text-gray-600">Enter your name to join</p>
           </div>
 
           <form onSubmit={handleJoinSubmit} className="space-y-6">
@@ -196,48 +204,69 @@ const JoinPage = () => {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Your Team
-              </label>
-              <div className="grid grid-cols-2 gap-4">
-                {quiz.teams.map((team) => (
-                  <button
-                    key={team.id}
-                    type="button"
-                    onClick={() => setSelectedTeam(team)}
-                    className={`p-4 rounded-lg border-2 transition-all duration-200 ${
-                      selectedTeam?.id === team.id
-                        ? 'shadow-lg transform scale-105'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                    style={{
-                      borderColor: selectedTeam?.id === team.id ? team.color : undefined,
-                      backgroundColor: selectedTeam?.id === team.id ? `${team.color}22` : undefined
-                    }}
-                  >
-                    <div className="text-center">
-                      <div
-                        className={`w-10 h-10 mx-auto rounded-full mb-2 transition-all duration-200 ${
-                          selectedTeam?.id === team.id ? 'transform scale-110' : ''
-                        }`}
-                        style={{ 
-                          backgroundColor: selectedTeam?.id === team.id ? team.color : team.color + '33'
-                        }}
-                      />
-                      <div 
-                        className={`font-medium transition-all duration-200 ${
-                          selectedTeam?.id === team.id ? 'text-lg' : 'text-base'
-                        }`}
-                        style={{ color: team.color }}
-                      >
-                        {team.name}
-                      </div>
+            {singleTeamMode && quiz.teams && quiz.teams.length > 0 && (
+              <div className="bg-white rounded-lg shadow-sm p-4 border-l-4" style={{ borderColor: quiz.teams[0].color }}>
+                <div className="flex items-center">
+                  <div
+                    className="w-10 h-10 rounded-full mr-3"
+                    style={{ backgroundColor: quiz.teams[0].color }}
+                  />
+                  <div>
+                    <div className="font-medium" style={{ color: quiz.teams[0].color }}>
+                      {quiz.teams[0].name}
                     </div>
-                  </button>
-                ))}
+                    <div className="text-sm text-gray-500">
+                      You will join this team automatically
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
+
+            {!singleTeamMode && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Your Team
+                </label>
+                <div className="grid grid-cols-2 gap-4">
+                  {quiz.teams.map((team) => (
+                    <button
+                      key={team.id}
+                      type="button"
+                      onClick={() => setSelectedTeam(team)}
+                      className={`p-4 rounded-lg border-2 transition-all duration-200 ${
+                        selectedTeam?.id === team.id
+                          ? 'shadow-lg transform scale-105'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      style={{
+                        borderColor: selectedTeam?.id === team.id ? team.color : undefined,
+                        backgroundColor: selectedTeam?.id === team.id ? `${team.color}22` : undefined
+                      }}
+                    >
+                      <div className="text-center">
+                        <div
+                          className={`w-10 h-10 mx-auto rounded-full mb-2 transition-all duration-200 ${
+                            selectedTeam?.id === team.id ? 'transform scale-110' : ''
+                          }`}
+                          style={{ 
+                            backgroundColor: selectedTeam?.id === team.id ? team.color : team.color + '33'
+                          }}
+                        />
+                        <div 
+                          className={`font-medium transition-all duration-200 ${
+                            selectedTeam?.id === team.id ? 'text-lg' : 'text-base'
+                          }`}
+                          style={{ color: team.color }}
+                        >
+                          {team.name}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {error && (
               <div className="text-red-500 text-sm text-center">{error}</div>
@@ -245,9 +274,9 @@ const JoinPage = () => {
 
             <button
               type="submit"
-              disabled={!name || !selectedTeam}
+              disabled={!name}
               className={`w-full py-3 px-4 text-white font-medium rounded-lg transition-colors ${
-                !name || !selectedTeam
+                !name
                   ? 'bg-gray-400 cursor-not-allowed'
                   : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
               }`}

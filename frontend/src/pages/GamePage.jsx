@@ -8,12 +8,20 @@ import Footer from '../components/Footer';
 import GameOverMessage from '../components/GameOverMessage';
 import TeamLeaderboard from '../components/game/TeamLeaderboard'; // Import TeamLeaderboard component
 
+// Default team for single team mode
+const DEFAULT_TEAM = {
+  id: 1,
+  name: 'Default Team',
+  color: '#3f51b5'
+};
+
 const GamePage = () => {
   const { pin } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const playerName = location.state?.playerName;
-  const playerTeam = location.state?.team;
+  // Use default team if no team is provided
+  const playerTeam = location.state?.team || DEFAULT_TEAM;
   
   const [currentQuestion, setCurrentQuestion] = useState(null);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
@@ -48,8 +56,7 @@ const GamePage = () => {
         });
         
         currentTeam.totalScore += player.score;
-        console.log('Total score:', currentTeam.totalScore);
-        currentTeam.averageScore = Math.round(currentTeam.totalScore / currentTeam.players.length);
+        currentTeam.averageScore = currentTeam.totalScore / currentTeam.players.length;
         
         teamScores.set(player.team.id, currentTeam);
       }
@@ -61,7 +68,7 @@ const GamePage = () => {
   };
 
   useEffect(() => {
-    if (!socket || !isConnected || !playerName || !pin || !playerTeam) {
+    if (!socket || !isConnected || !playerName || !pin) {
       navigate('/');
       return;
     }
@@ -129,7 +136,7 @@ const GamePage = () => {
       socket.off('show_leaderboard');
       socket.off('quiz_end');
     };
-  }, [socket, isConnected, playerName, pin, navigate, playerTeam]);
+  }, [socket, isConnected, playerName, pin, navigate]);
 
   const handleAnswerSelect = (answer) => {
     if (answered || !currentQuestion) return;
@@ -162,9 +169,29 @@ const GamePage = () => {
     return 'bg-white hover:bg-gray-100 text-gray-800';
   };
 
+  // Display team badge in header
+  const renderTeamBadge = () => {
+    if (!playerTeam) return null;
+    
+    return (
+      <div 
+        className="ml-2 px-3 py-1 rounded-full text-sm font-medium"
+        style={{ 
+          backgroundColor: `${playerTeam.color}22`,
+          color: playerTeam.color,
+          border: `1px solid ${playerTeam.color}`
+        }}
+      >
+        {playerTeam.name}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col">
-      <Header userName={playerName} />
+      <Header userName={playerName}>
+        {renderTeamBadge()}
+      </Header>
       {(!currentQuestion && winner)  && <GameOverMessage winner={winner} />}
       {error ? (
         <div className="p-4">

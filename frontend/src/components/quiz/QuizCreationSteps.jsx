@@ -16,11 +16,19 @@ const QuizCreationSteps = ({
   onQuestionRemove,
   onStepChange,
   onSubmit,
-  isStepValid
+  isStepValid,
+  singleTeamMode = true, 
+  icons = {}
 }) => {
   const handleNext = () => {
     if (isStepValid()) {
       onStepChange(currentStep + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentStep > 0) {
+      onStepChange(currentStep - 1);
     }
   };
 
@@ -41,7 +49,9 @@ const QuizCreationSteps = ({
             onTeamAdd={onTeamAdd}
             onTeamRemove={onTeamRemove}
             onTeamNameChange={onTeamNameChange}
+            onPrevious={handlePrevious}
             onNext={handleNext}
+            singleTeamMode={singleTeamMode}
           />
         );
       case 2:
@@ -56,26 +66,39 @@ const QuizCreationSteps = ({
                 }
                 onRemove={() => onQuestionRemove(index)}
                 isLast={index === quiz.questions.length - 1}
+                icons={icons}
               />
             ))}
             
-            <div className="flex gap-4">
+            <div className="flex flex-col gap-4">
               <Button
                 variant="outlined"
                 onClick={onQuestionAdd}
                 fullWidth
+                startIcon={icons.add}
               >
                 Add Question
               </Button>
               
-              <Button
-                variant="contained"
-                onClick={onSubmit}
-                fullWidth
-                disabled={!isStepValid()}
-              >
-                Create Quiz
-              </Button>
+              <div className="flex gap-4">
+                <Button
+                  variant="outlined"
+                  onClick={handlePrevious}
+                  fullWidth
+                >
+                  Previous
+                </Button>
+                
+                <Button
+                  variant="contained"
+                  onClick={onSubmit}
+                  fullWidth
+                  disabled={!isStepValid()}
+                  startIcon={icons.save}
+                >
+                  Create Quiz
+                </Button>
+              </div>
             </div>
           </div>
         );
@@ -87,17 +110,6 @@ const QuizCreationSteps = ({
   return (
     <div className="space-y-6">
       {renderCurrentStep()}
-      
-      <div className="flex justify-between mt-6">
-        {currentStep > 0 && (
-          <Button
-            variant="outlined"
-            onClick={() => onStepChange(currentStep - 1)}
-          >
-            Previous
-          </Button>
-        )}
-      </div>
     </div>
   );
 };

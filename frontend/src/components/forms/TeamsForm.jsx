@@ -1,78 +1,74 @@
-import React from 'react';
-import { Box, Button, TextField, IconButton, Typography, List, ListItem } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
+import React, { useEffect } from 'react';
+import { Typography, Button, Radio, FormControlLabel } from '@mui/material';
 
-const TeamsForm = ({ teams, onTeamAdd, onTeamRemove, onTeamNameChange, onNext }) => {
-  const handleAddTeam = () => {
-    onTeamAdd({
-      id: Date.now(),
-      name: `Team ${teams.length + 1}`,
-      color: `#${Math.floor(Math.random()*16777215).toString(16)}`
-    });
-  };
+const TeamsForm = ({ teams, onNext, onPrevious, singleTeamMode }) => {
+  // Ensure the default team is automatically selected
+  useEffect(() => {
+    // This code runs when the component mounts to ensure "Student" team is selected
+    // No action needed if the default team is already configured in the parent component
+    console.log("Default Student team is active");
+  }, []);
 
+  // If in single team mode, simply show info and continue button
+  if (singleTeamMode) {
+    return (
+      <div className="max-w-2xl mx-auto p-6">
+        <Typography variant="h5" className="mb-6 text-center">
+          Team Setup
+        </Typography>
+        
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6 border-l-4" style={{ borderColor: teams[0].color }}>
+          <Typography variant="subtitle1" className="mb-2 font-medium">
+            Team Selection
+          </Typography>
+          
+          {/* Adding a visual radio button to reinforce selection */}
+          <FormControlLabel 
+            control={<Radio checked={true} color="primary" />} 
+            label={<Typography variant="body1" className="font-bold">{teams[0].name}</Typography>}
+          />
+          
+          <Typography variant="body2" color="text.secondary" className="mt-2 ml-7">
+            This quiz is configured to use a single team named "Student" for all participants.
+            No additional team configuration is required.
+          </Typography>
+        </div>
+
+        <div className="mt-6 space-y-3">
+          <Button
+            variant="contained"
+            onClick={() => onNext()}
+            fullWidth
+            className="py-3"
+            color="primary"
+          >
+            Continue to Questions
+          </Button>
+          
+          <Button
+            variant="outlined"
+            onClick={() => onPrevious()}
+            fullWidth
+            className="py-3"
+          >
+            Back to Basic Info
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  
+  // This part is the original implementation, but it should never be reached
+  // when singleTeamMode is true
   return (
     <div className="max-w-2xl mx-auto p-6">
       <Typography variant="h5" className="mb-6 text-center">
         Team Setup
       </Typography>
       
-      <List className="space-y-4">
-        {teams.map((team, index) => (
-          <ListItem
-            key={team.id}
-            className="flex items-center gap-4 p-4 bg-white rounded-lg shadow-sm"
-            sx={{
-              borderLeft: 4,
-              borderColor: team.color
-            }}
-          >
-            <TextField
-              fullWidth
-              label={`Team ${index + 1} Name`}
-              value={team.name}
-              onChange={(e) => onTeamNameChange(team.id, e.target.value)}
-              size="small"
-              className="flex-1"
-            />
-            <IconButton
-              onClick={() => onTeamRemove(team.id)}
-              disabled={teams.length <= 2}
-              color="error"
-              className="flex-shrink-0"
-            >
-              <DeleteIcon />
-            </IconButton>
-          </ListItem>
-        ))}
-      </List>
-
-      <div className="mt-6 space-y-4">
-        <Button
-          variant="outlined"
-          onClick={handleAddTeam}
-          fullWidth
-          className="py-3"
-        >
-          Add Team
-        </Button>
-
-        <Button
-          variant="contained"
-          onClick={onNext}
-          fullWidth
-          disabled={teams.length < 2}
-          className="py-3"
-        >
-          Continue to Questions
-        </Button>
-      </div>
-
-      {teams.length < 2 && (
-        <Typography variant="caption" color="error" className="mt-2 text-center block">
-          Please add at least 2 teams to continue
-        </Typography>
-      )}
+      <Typography color="error">
+        Error: Team configuration mode mismatch. Please contact support.
+      </Typography>
     </div>
   );
 };

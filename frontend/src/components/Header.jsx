@@ -7,7 +7,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import { useState, useEffect } from 'react';
 
-const Header = ({ userName }) => {
+const Header = ({ userName, children }) => {
   const location = useLocation();
   const isHomePage = location.pathname === '/';
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -52,7 +52,7 @@ const Header = ({ userName }) => {
         scrolled ? 'py-2 bg-blue-100 backdrop-blur-sm' : 'py-4'
       }`}>
         <div className="max-w-6xl mx-auto px-4 flex justify-between items-center">
-          {/* Logo */}
+          {/* Logo - Left side */}
           <div className="flex items-center">
             <Link
               to="/"
@@ -67,7 +67,7 @@ const Header = ({ userName }) => {
             </Link>
           </div>
           
-          {/* Desktop Navigation */}
+          {/* Desktop Navigation - Right side */}
           <nav className="hidden md:flex items-center space-x-6">
             <Link 
               to="/" 
@@ -87,33 +87,35 @@ const Header = ({ userName }) => {
               <QuizIcon className="mr-1" fontSize="small" />
               <span>Quizzes</span>
             </Link>
-            <Link 
-              to="/profile" 
-              className={`flex items-center text-gray-700 hover:text-blue-500 ${
-                location.pathname.includes('/profile') ? 'text-blue-500 font-medium' : ''
-              }`}
-            >
-              <PersonIcon className="mr-1" fontSize="small" />
-              <span>{userName ? userName : 'Profile'}</span>
-            </Link>
+            <div className="flex items-center">
+              <Link 
+                to="/profile" 
+                className={`flex items-center text-gray-700 hover:text-blue-500 ${
+                  location.pathname.includes('/profile') ? 'text-blue-500 font-medium' : ''
+                }`}
+              >
+                <PersonIcon className="mr-1" fontSize="small" />
+                <span>{userName ? userName : 'Profile'}</span>
+              </Link>
+              {children}
+            </div>
           </nav>
           
           {/* Mobile Menu Button */}
-          <div className="flex justify-center items-center h-full">
-  <button 
-    id="menu-button"
-    className="md:hidden p-2 rounded-lg text-gray-700 hover:bg-blue-200 focus:outline-none flex items-right justify-right"
-    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-    aria-label="Toggle menu"
-  >
-    {mobileMenuOpen ? (
-      <CloseIcon fontSize="medium" />
-    ) : (
-      <MenuIcon fontSize="medium" />
-    )}
-  </button>
-</div>
-
+          <div className="md:hidden flex justify-center items-center h-full">
+            <button 
+              id="menu-button"
+              className="p-2 rounded-lg text-gray-700 hover:bg-blue-200 focus:outline-none flex items-center justify-center"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? (
+                <CloseIcon fontSize="medium" />
+              ) : (
+                <MenuIcon fontSize="medium" />
+              )}
+            </button>
+          </div>
         </div>
         
         {/* Mobile Menu */}
@@ -144,17 +146,18 @@ const Header = ({ userName }) => {
                 <span>Quizzes</span>
               </div>
             </Link>
-            <Link 
-              to="/profile" 
-              className={`block py-2 px-3 rounded-md ${
-                location.pathname.includes('/profile') ? 'bg-blue-100 text-blue-600' : 'text-gray-700 hover:bg-blue-50'
-              }`}
-            >
-              <div className="flex items-center">
+            <div className="flex items-center py-2 px-3 rounded-md">
+              <Link 
+                to="/profile" 
+                className={`flex items-center ${
+                  location.pathname.includes('/profile') ? 'bg-blue-100 text-blue-600' : 'text-gray-700 hover:bg-blue-50'
+                }`}
+              >
                 <PersonIcon className="mr-3" fontSize="small" />
                 <span>{userName ? userName : 'Profile'}</span>
-              </div>
-            </Link>
+              </Link>
+              {children && <div className="ml-2">{children}</div>}
+            </div>
           </div>
         </div>
       </header>

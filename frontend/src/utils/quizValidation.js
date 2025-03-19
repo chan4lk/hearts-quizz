@@ -13,7 +13,8 @@ export const validateBasicInfo = (quiz) => {
  * @returns {boolean} - Whether the teams setup is valid
  */
 export const validateTeams = (quiz) => {
-  return quiz.teams.length >= 2 && quiz.teams.every(team => team.name.trim());
+  // In single team mode, we just need at least one team with a name
+  return quiz.teams.length > 0 && quiz.teams.every(team => team.name.trim());
 };
 
 /**
