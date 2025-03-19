@@ -1,5 +1,6 @@
 const gameService = require('../services/gameService');
 const db = require('../db');
+const { handleSocketError, createSocketError, SocketErrorTypes } = require('./socketErrorHandler');
 
 function socketHandler(io) {
   const questionTimers = new Map();
@@ -50,17 +51,20 @@ function socketHandler(io) {
   io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
+    // Handle errors
+    socket.on('error', (error) => {
+      handleSocketError(socket, 'socket_error', error);
+    });
+
     // Track which room/quiz this socket is in
     let currentPin = null;
 
     socket.on('join_quiz', async ({ pin, playerName, teamId }) => {
-      console.log('Join quiz request:', { pin, playerName, teamId });
       try {
         // Get quiz from database
         const quiz = await db.get('SELECT * FROM quizzes WHERE pin = ?', [pin]);
         if (!quiz) {
-          socket.emit('quiz_error', { message: 'Quiz not found' });
-          return;
+          throw new Error('Quiz not found');
         }
 
         // Join the room
@@ -70,8 +74,7 @@ function socketHandler(io) {
         // Add player to game
         const result = await gameService.joinQuiz(pin, playerName, teamId);
         if (!result.success) {
-          socket.emit('quiz_error', { message: result.error });
-          return;
+          throw new Error(result.error);
         }
 
         // Register socket with game service
@@ -97,68 +100,79 @@ function socketHandler(io) {
           });
         }
       } catch (error) {
-        console.error('Error in join_quiz:', error);
-        socket.emit('quiz_error', { message: 'Failed to join quiz' });
+        handleSocketError(socket, 'join_quiz', error);
       }
     });
 
     socket.on('start_quiz', async ({ pin }) => {
-      console.log('Starting quiz:', pin);
-      const gameState = await gameService.startQuiz(pin);
-      if (!gameState) {
-        socket.emit('quiz_error', { message: 'Failed to start quiz' });
-        return;
-      }
-
-      // Notify all players that the quiz has started
-      io.to(pin).emit('quiz_started');
-
-      // Start with first question
-      const firstQuestion = await gameService.nextQuestion(pin);
-      if (firstQuestion) {
-        if (firstQuestion.isOver) {
-          io.to(pin).emit('quiz_end', firstQuestion);
-        } else {
-          // Send first question to admin
-          socket.emit('question_start', { question: firstQuestion.adminData });
-          // Send player data to other players
-          socket.to(pin).emit('question_start', { question: firstQuestion.playerData });
-          // Start the timer
-          startQuestionTimer(pin, firstQuestion.adminData.timeLimit);
+      try {
+        console.log('Starting quiz:', pin);
+        const gameState = await gameService.startQuiz(pin);
+        if (!gameState) {
+          throw new Error('Failed to start quiz');
         }
+
+        // Notify all players that the quiz has started
+        io.to(pin).emit('quiz_started');
+
+        // Start with first question
+        const firstQuestion = await gameService.nextQuestion(pin);
+        if (firstQuestion) {
+          if (firstQuestion.isOver) {
+            io.to(pin).emit('quiz_end', firstQuestion);
+          } else {
+            // Send first question to admin
+            socket.emit('question_start', { question: firstQuestion.adminData });
+            // Send player data to other players
+            socket.to(pin).emit('question_start', { question: firstQuestion.playerData });
+            // Start the timer
+            startQuestionTimer(pin, firstQuestion.adminData.timeLimit);
+          }
+        }
+      } catch (error) {
+        handleSocketError(socket, 'start_quiz', error);
       }
     });
 
     socket.on('next_question', async ({ pin }) => {
-      console.log('Moving to next question:', pin);
-      const result = await gameService.nextQuestion(pin);
-      if (result) {
-        if (result.isOver) {
-          io.to(pin).emit('quiz_end', result);
-        } else {
-          // Send admin data to admin socket
-          socket.emit('question_start', { question: result.adminData });
-          // Send player data to all other sockets in the room
-          socket.to(pin).emit('question_start', { question: result.playerData });
-          // Start the timer
-          startQuestionTimer(pin, result.adminData.timeLimit);
+      try {
+        console.log('Moving to next question:', pin);
+        const result = await gameService.nextQuestion(pin);
+        if (result) {
+          if (result.isOver) {
+            io.to(pin).emit('quiz_end', result);
+          } else {
+            // Send admin data to admin socket
+            socket.emit('question_start', { question: result.adminData });
+            // Send player data to all other sockets in the room
+            socket.to(pin).emit('question_start', { question: result.playerData });
+            // Start the timer
+            startQuestionTimer(pin, result.adminData.timeLimit);
+          }
         }
+      } catch (error) {
+        handleSocketError(socket, 'next_question', error);
       }
     });
 
     socket.on('submit_answer', async ({ pin, playerName, answer, timeLeft }) => {
-      console.log('Answer submitted:', { pin, playerName, answer, timeLeft });
-      
-      const result = await gameService.submitAnswer(pin, playerName, answer, timeLeft);
-      if (result) {
-        // Send immediate feedback to the player who answered
-        socket.emit('answer_submitted', result);
+      try {
+        console.log('Answer submitted:', { pin, playerName, answer, timeLeft });
+        
+        const result = await gameService.submitAnswer(pin, playerName, answer, timeLeft);
+        if (result) {
+          // Send immediate feedback to the player who answered
+          socket.emit('answer_submitted', result);
+        }
+      } catch (error) {
+        handleSocketError(socket, 'submit_answer', error);
       }
     });
 
     socket.on('disconnect_all_players', async ({ pin }) => {
-      console.log('Received disconnect all players request for quiz:', pin);
       try {
+        console.log('Received disconnect all players request for quiz:', pin);
+        
         // Get all sockets in the room except admin
         const sockets = await io.in(pin).fetchSockets();
         console.log(`Found ${sockets.length} sockets in room ${pin}`);
@@ -185,11 +199,7 @@ function socketHandler(io) {
           });
         }
       } catch (error) {
-        console.error('Error disconnecting players:', error);
-        socket.emit('quiz_error', { 
-          message: 'Failed to disconnect players',
-          error: error.message 
-        });
+        handleSocketError(socket, 'disconnect_all_players', error);
       }
     });
 

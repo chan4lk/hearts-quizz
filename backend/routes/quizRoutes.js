@@ -3,61 +3,107 @@ const router = express.Router();
 const gameService = require('../services/gameService');
 const authMiddleware = require('../middleware/auth');
 const Quiz = require('../models/Quiz');
+const { ApiError } = require('../middleware/errorHandler');
 
-// Get quiz by pin
-router.get('/pin/:pin', async (req, res) => {
-  try {
-    const quiz = await Quiz.findByPin(req.params.pin);
-    if (!quiz) {
-      return res.status(404).json({ error: 'Quiz not found' });
-    }
+// Helper function to wrap async route handlers
+const asyncHandler = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
 
-    // Initialize game state if it doesn't exist
-    if (!gameService.getGameState(req.params.pin)) {
-      gameService.initializeQuiz(req.params.pin, {
-        questions: quiz.questions.map(q => ({
-          text: q.text,
-          options: q.options,
-          image: q.image_url,
-          correctAnswer: q.correct_answer,
-          timeLimit: q.time_limit,
-          points: q.points
-        })),
-        teams: quiz.teams,
-        isActive: false,
-        currentQuestion: -1,
-        scores: new Map(),
-        teamScores: new Map(quiz.teams.map(team => [team.id, 0])),
-        answers: new Map()
-      });
-    }
+/**
+ * GET /quizzes
+ * Get all quizzes (requires authentication)
+ */
+router.get('/', authMiddleware, asyncHandler(async (req, res) => {
+  const quizzes = await Quiz.findAll();
+  res.json(quizzes);
+}));
 
-    // Don't send correct answers to client
-    const safeQuiz = {
-      id: quiz.id,
-      title: quiz.title,
-      description: quiz.description,
-      category: quiz.category,
-      pin: quiz.pin,
-      teams: quiz.teams,
+/**
+ * GET /quizzes/:id
+ * Get quiz by ID
+ */
+router.get('/:id', asyncHandler(async (req, res) => {
+  const quiz = await Quiz.findById(req.params.id);
+  if (!quiz) {
+    throw new ApiError(404, 'Quiz not found');
+  }
+  
+  // Don't send correct answers to client
+  const safeQuiz = {
+    id: quiz.id,
+    title: quiz.title,
+    description: quiz.description,
+    category: quiz.category,
+    pin: quiz.pin,
+    teams: quiz.teams,
+    questions: quiz.questions.map(q => ({
+      text: q.text,
+      options: q.options,
+      image: q.image_url,
+      timeLimit: q.time_limit,
+      points: q.points
+    }))
+  };
+
+  res.json(safeQuiz);
+}));
+
+/**
+ * GET /quizzes/pin/:pin
+ * Get quiz by PIN
+ */
+router.get('/pin/:pin', asyncHandler(async (req, res) => {
+  const quiz = await Quiz.findByPin(req.params.pin);
+  if (!quiz) {
+    throw new ApiError(404, 'Quiz not found');
+  }
+
+  // Initialize game state if it doesn't exist
+  if (!gameService.getGameState(req.params.pin)) {
+    gameService.initializeQuiz(req.params.pin, {
       questions: quiz.questions.map(q => ({
         text: q.text,
         options: q.options,
         image: q.image_url,
+        correctAnswer: q.correct_answer,
         timeLimit: q.time_limit,
         points: q.points
-      }))
-    };
-
-    res.json(safeQuiz);
-  } catch (error) {
-    console.error('Error fetching quiz:', error);
-    res.status(500).json({ error: 'Failed to fetch quiz', stack: error });
+      })),
+      teams: quiz.teams,
+      isActive: false,
+      currentQuestion: -1,
+      scores: new Map(),
+      teamScores: new Map(quiz.teams.map(team => [team.id, 0])),
+      answers: new Map()
+    });
   }
-});
 
-// Create a new quiz
-router.post('/', authMiddleware, async (req, res) => {
+  // Don't send correct answers to client
+  const safeQuiz = {
+    id: quiz.id,
+    title: quiz.title,
+    description: quiz.description,
+    category: quiz.category,
+    pin: quiz.pin,
+    teams: quiz.teams,
+    questions: quiz.questions.map(q => ({
+      text: q.text,
+      options: q.options,
+      image: q.image_url,
+      timeLimit: q.time_limit,
+      points: q.points
+    }))
+  };
+
+  res.json(safeQuiz);
+}));
+
+/**
+ * POST /quizzes
+ * Create a new quiz (requires authentication)
+ */
+router.post('/', authMiddleware, asyncHandler(async (req, res) => {
   try {
     const { title, description, category, teams, questions } = req.body;
 
@@ -102,7 +148,7 @@ router.post('/', authMiddleware, async (req, res) => {
       answers: new Map()
     });
 
-    res.json({
+    res.status(201).json({
       id: fullQuiz.id,
       pin: fullQuiz.pin,
       title: fullQuiz.title,
@@ -118,47 +164,104 @@ router.post('/', authMiddleware, async (req, res) => {
       }))
     });
   } catch (error) {
-    console.error('Error creating quiz:', error);
-    res.status(500).json({ error: 'Failed to create quiz', stack: error });
+    throw new ApiError(500, 'Failed to create quiz', error);
   }
-});
+}));
 
-// Get user's quizzes
-router.get('/', authMiddleware, async (req, res) => {
-  try {
-    const quizzes = await Quiz.findAll();
-    res.json(quizzes);
-  } catch (error) {
-    console.error('Error fetching quizzes:', error);
-    res.status(500).json({ error: 'Failed to fetch quizzes', stack: error });
+/**
+ * PUT /quizzes/:id
+ * Update an entire quiz (requires authentication)
+ */
+router.put('/:id', authMiddleware, asyncHandler(async (req, res) => {
+  const quizId = req.params.id;
+  const { title, description, category, teams, questions } = req.body;
+  
+  // Validate quiz exists
+  const existingQuiz = await Quiz.findById(quizId);
+  if (!existingQuiz) {
+    throw new ApiError(404, 'Quiz not found');
   }
-});
+  
+  // Update quiz
+  const updatedQuiz = await Quiz.update(quizId, {
+    title, 
+    description, 
+    category,
+    teams,
+    questions
+  });
+  
+  res.json(updatedQuiz);
+}));
 
-// Update quiz questions
-router.put('/:quizId/questions', authMiddleware, async (req, res) => {
-  try {
-    const quizId = req.params.quizId;
-    const { questions } = req.body;
-
-    // Validate input
-    if (!Array.isArray(questions)) {
-      return res.status(400).json({ error: 'Questions must be an array' });
-    }
-
-    // Update questions
-    const updatedQuestions = await Quiz.updateQuestions(quizId, questions);
-
-    res.json(updatedQuestions.map(q => ({
-      text: q.text,
-      options: q.options,
-      image: q.image_url,
-      timeLimit: q.time_limit,
-      points: q.points
-    })));
-  } catch (error) {
-    console.error('Error updating quiz questions:', error);
-    res.status(500).json({ error });
+/**
+ * PATCH /quizzes/:id
+ * Partially update a quiz (requires authentication)
+ */
+router.patch('/:id', authMiddleware, asyncHandler(async (req, res) => {
+  const quizId = req.params.id;
+  const updates = req.body;
+  
+  // Validate quiz exists
+  const existingQuiz = await Quiz.findById(quizId);
+  if (!existingQuiz) {
+    throw new ApiError(404, 'Quiz not found');
   }
-});
+  
+  // Update quiz with only the fields provided
+  const updatedQuiz = await Quiz.partialUpdate(quizId, updates);
+  
+  res.json(updatedQuiz);
+}));
+
+/**
+ * PUT /quizzes/:id/questions
+ * Update quiz questions (requires authentication)
+ */
+router.put('/:id/questions', authMiddleware, asyncHandler(async (req, res) => {
+  const quizId = req.params.id;
+  const { questions } = req.body;
+
+  // Validate input
+  if (!Array.isArray(questions)) {
+    throw new ApiError(400, 'Questions must be an array');
+  }
+
+  // Validate quiz exists
+  const existingQuiz = await Quiz.findById(quizId);
+  if (!existingQuiz) {
+    throw new ApiError(404, 'Quiz not found');
+  }
+
+  // Update questions
+  const updatedQuestions = await Quiz.updateQuestions(quizId, questions);
+
+  res.json(updatedQuestions.map(q => ({
+    text: q.text,
+    options: q.options,
+    image: q.image_url,
+    timeLimit: q.time_limit,
+    points: q.points
+  })));
+}));
+
+/**
+ * DELETE /quizzes/:id
+ * Delete a quiz (requires authentication)
+ */
+router.delete('/:id', authMiddleware, asyncHandler(async (req, res) => {
+  const quizId = req.params.id;
+  
+  // Validate quiz exists
+  const existingQuiz = await Quiz.findById(quizId);
+  if (!existingQuiz) {
+    throw new ApiError(404, 'Quiz not found');
+  }
+  
+  // Delete quiz
+  await Quiz.delete(quizId);
+  
+  res.status(204).end();
+}));
 
 module.exports = router;
