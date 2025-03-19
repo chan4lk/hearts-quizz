@@ -2,12 +2,47 @@ const sqlite3 = require('sqlite3');
 const { open } = require('sqlite');
 const path = require('path');
 const fs = require('fs');
+const mssql = require('./mssql');
 
 let db = null;
+let dbType = null;
 
+/**
+ * Initialize the database connection based on configuration
+ * @returns {Promise<Object>} - The database connection
+ */
 async function init() {
   if (db) return db;
 
+  // Determine database type from environment variable (default to sqlite)
+  dbType = process.env.DB_TYPE || 'sqlite';
+  
+  console.log(`Initializing database with type: ${dbType}`);
+  
+  // Set global helper for database type
+  global.dbHelper = {
+    getCurrentTimestamp: () => dbType === 'mssql' ? 'GETDATE()' : 'CURRENT_TIMESTAMP',
+    isMssql: () => dbType === 'mssql',
+    isSqlite: () => dbType === 'sqlite',
+    getDbType: () => dbType
+  };
+
+  if (dbType === 'mssql') {
+    // Initialize MSSQL database
+    db = await mssql.init();
+  } else {
+    // Initialize SQLite database
+    db = await initSqlite();
+  }
+
+  return db;
+}
+
+/**
+ * Initialize SQLite database
+ * @returns {Promise<Object>} - The SQLite database connection
+ */
+async function initSqlite() {
   const dbDir = __dirname;
   const dbPath = path.join(dbDir, 'khoot.sqlite');
 
@@ -40,14 +75,14 @@ async function init() {
   }
 
   // Open database with write permissions
-  db = await open({
+  const sqliteDb = await open({
     filename: dbPath,
     driver: sqlite3.Database,
     mode: sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE
   });
 
   // Create tables if they don't exist
-  await db.exec(`
+  await sqliteDb.exec(`
     PRAGMA foreign_keys = ON;
 
     CREATE TABLE IF NOT EXISTS users (
@@ -143,23 +178,75 @@ async function init() {
     console.error('Error setting final permissions:', error);
   }
 
-  return db;
+  console.log('SQLite database initialized successfully');
+  return sqliteDb;
 }
 
-function get(...args) {
-  return db.get(...args);
+/**
+ * Execute a SQL query that returns a single row
+ * @param {string} query - SQL query to execute
+ * @param {Array} params - Query parameters
+ * @returns {Promise<Object>} - Query result
+ */
+async function get(query, params = []) {
+  if (dbType === 'mssql') {
+    // Convert ? placeholders to @paramN for MSSQL
+    const convertedQuery = convertQueryPlaceholders(query);
+    return mssql.get(convertedQuery, params);
+  }
+  return db.get(query, params);
 }
 
-function all(...args) {
-  return db.all(...args);
+/**
+ * Execute a SQL query that returns multiple rows
+ * @param {string} query - SQL query to execute
+ * @param {Array} params - Query parameters
+ * @returns {Promise<Array>} - Query results
+ */
+async function all(query, params = []) {
+  if (dbType === 'mssql') {
+    // Convert ? placeholders to @paramN for MSSQL
+    const convertedQuery = convertQueryPlaceholders(query);
+    return mssql.all(convertedQuery, params);
+  }
+  return db.all(query, params);
 }
 
-function run(...args) {
-  return db.run(...args);
+/**
+ * Execute a SQL query that modifies data
+ * @param {string} query - SQL query to execute
+ * @param {Array} params - Query parameters
+ * @returns {Promise<Object>} - Query result
+ */
+async function run(query, params = []) {
+  if (dbType === 'mssql') {
+    // Convert ? placeholders to @paramN for MSSQL
+    const convertedQuery = convertQueryPlaceholders(query);
+    return mssql.run(convertedQuery, params);
+  }
+  return db.run(query, params);
 }
 
-function exec(...args) {
-  return db.exec(...args);
+/**
+ * Execute a SQL batch script
+ * @param {string} query - SQL batch to execute
+ * @returns {Promise<void>}
+ */
+async function exec(query) {
+  if (dbType === 'mssql') {
+    return mssql.exec(query);
+  }
+  return db.exec(query);
+}
+
+/**
+ * Convert SQLite-style ? placeholders to MSSQL-style @paramN placeholders
+ * @param {string} query - SQLite-style query
+ * @returns {string} - MSSQL-style query
+ */
+function convertQueryPlaceholders(query) {
+  let paramIndex = 0;
+  return query.replace(/\?/g, () => `@param${paramIndex++}`);
 }
 
 module.exports = {

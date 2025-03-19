@@ -5,16 +5,42 @@ const Team = require('./Team');
 class Quiz {
   static async findAll() {
     try {
-      const rows = await db.all(`
-        SELECT q.id, q.pin, q.title, q.description, q.category, q.created_at,
-               COUNT(qn.id) as question_count
-        FROM quizzes q
-        LEFT JOIN questions qn ON q.id = qn.quiz_id
-        WHERE q.active = 1
-        GROUP BY q.id
-        ORDER BY q.created_at DESC
-      `);
-      return rows;
+      // Ensure database is initialized
+      if (!db) {
+        await db.init();
+      }
+      
+      // Determine database type safely
+      const isMssql = global.dbHelper && typeof global.dbHelper.getDbType === 'function' && 
+                     global.dbHelper.getDbType() === 'mssql';
+      
+      // SQL Server requires all columns in the SELECT to be in the GROUP BY
+      if (isMssql) {
+        console.log('Using SQL Server query for findAll');
+        const rows = await db.all(`
+          SELECT q.id, q.pin, q.title, q.description, q.category, q.created_at,
+                 COUNT(qn.id) as question_count
+          FROM quizzes q
+          LEFT JOIN questions qn ON q.id = qn.quiz_id
+          WHERE q.active = 1
+          GROUP BY q.id, q.pin, q.title, q.description, q.category, q.created_at
+          ORDER BY q.created_at DESC
+        `);
+        return rows;
+      } else {
+        console.log('Using SQLite query for findAll');
+        // SQLite version
+        const rows = await db.all(`
+          SELECT q.id, q.pin, q.title, q.description, q.category, q.created_at,
+                 COUNT(qn.id) as question_count
+          FROM quizzes q
+          LEFT JOIN questions qn ON q.id = qn.quiz_id
+          WHERE q.active = 1
+          GROUP BY q.id
+          ORDER BY q.created_at DESC
+        `);
+        return rows;
+      }
     } catch (error) {
       console.error('Error in Quiz.findAll:', error);
       throw error;
@@ -68,13 +94,21 @@ class Quiz {
 
       // Insert quiz
       const result = await db.run(`
-        INSERT INTO quizzes (title, description, category, pin)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO quizzes (title, description, category, pin, user_id, active, created_at)
+        VALUES (?, ?, ?, ?, NULL, 1, ${global.dbHelper.getCurrentTimestamp()})
       `, [title, description || '', category || '', pin]);
+      
+      // Check if we got a valid lastID
       const quizId = result.lastID;
+      if (!quizId) {
+        throw new Error('Failed to get the last inserted ID for quiz');
+      }
+      
+      console.log(`Created quiz with ID: ${quizId}`);
 
       // Insert teams
       if (teams && teams.length > 0) {
+        console.log(`Creating ${teams.length} teams for quiz ${quizId}`);
         await Team.createTeams(quizId, teams);
       }
 
@@ -84,9 +118,9 @@ class Quiz {
         await db.run(`
           INSERT INTO questions (
             quiz_id, text, image_url, time_limit, points,
-            options, correct_answer, order_index
+            options, correct_answer, order_index, created_at
           )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ${global.dbHelper.getCurrentTimestamp()})
         `, [
           quizId, q.text, q.imageUrl || '/quiz.jpeg', q.timeLimit || 30, q.points || 1000,
           JSON.stringify(q.options), q.correctAnswer, i
@@ -122,9 +156,9 @@ class Quiz {
         await db.run(`
           INSERT INTO questions (
             quiz_id, text, image_url, time_limit, points,
-            options, correct_answer, order_index
+            options, correct_answer, order_index, created_at
           )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ${global.dbHelper.getCurrentTimestamp()})
         `, [
           quizId, q.text, q.imageUrl || '/quiz.jpeg', q.timeLimit || 30, q.points || 1000,
           JSON.stringify(q.options), q.correctAnswer, i

@@ -22,11 +22,37 @@ class GameStateService {
       answers: state.answers instanceof Map ? Object.fromEntries(state.answers) : state.answers
     });
     
-    await db.run(
-      `INSERT OR REPLACE INTO game_states (pin, quiz_id, state) 
-       VALUES (?, ?, ?)`,
-      [pin, quiz_id, stateJson]
-    );
+    // Use database-specific upsert syntax
+    const isMssql = global.dbHelper && typeof global.dbHelper.getDbType === 'function' && 
+                   global.dbHelper.getDbType() === 'mssql';
+    if (isMssql) {
+      console.log('Using SQL Server MERGE for game_states');
+      // For SQL Server, we need to use named parameters
+      const request = {
+        pin: pin,
+        quiz_id: quiz_id,
+        state: stateJson
+      };
+      
+      // SQL Server MERGE syntax for upsert with properly named parameters
+      await db.run(`
+        MERGE INTO game_states AS target
+        USING (SELECT @pin AS pin) AS source
+        ON target.pin = source.pin
+        WHEN MATCHED THEN
+          UPDATE SET quiz_id = @quiz_id, state = @state
+        WHEN NOT MATCHED THEN
+          INSERT (pin, quiz_id, state)
+          VALUES (@pin, @quiz_id, @state);
+      `, request);
+    } else {
+      // SQLite syntax
+      await db.run(
+        `INSERT OR REPLACE INTO game_states (pin, quiz_id, state) 
+         VALUES (?, ?, ?)`,
+        [pin, quiz_id, stateJson]
+      );
+    }
 
     // Save player scores
     if (state.scores) {
@@ -36,11 +62,38 @@ class GameStateService {
       
       for (const [playerName, score] of Object.entries(scores)) {
         if (playerName === 'admin') continue;
-        await db.run(
-          `INSERT OR REPLACE INTO game_players (pin, player_name, score)
-           VALUES (?, ?, ?)`,
-          [pin, playerName, score]
-        );
+        
+        // Use database-specific upsert syntax for player scores
+        const isMssql = global.dbHelper && typeof global.dbHelper.getDbType === 'function' && 
+                       global.dbHelper.getDbType() === 'mssql';
+        if (isMssql) {
+          console.log(`Saving player score for ${playerName}: ${score}`);
+          // For SQL Server, we need to use named parameters
+          const playerRequest = {
+            pin: pin,
+            player_name: playerName,
+            score: score
+          };
+          
+          // SQL Server MERGE syntax for upsert with properly named parameters
+          await db.run(`
+            MERGE INTO game_players AS target
+            USING (SELECT @pin AS pin, @player_name AS player_name) AS source
+            ON target.pin = source.pin AND target.player_name = source.player_name
+            WHEN MATCHED THEN
+              UPDATE SET score = @score
+            WHEN NOT MATCHED THEN
+              INSERT (pin, player_name, score)
+              VALUES (@pin, @player_name, @score);
+          `, playerRequest);
+        } else {
+          // SQLite syntax
+          await db.run(
+            `INSERT OR REPLACE INTO game_players (pin, player_name, score)
+             VALUES (?, ?, ?)`,
+            [pin, playerName, score]
+          );
+        }
       }
     }
   }

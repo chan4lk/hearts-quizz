@@ -3,28 +3,59 @@ const db = require('../db');
 class Team {
   static async createTable() {
     try {
-      // Create teams table
-      await db.run(`
-        CREATE TABLE IF NOT EXISTS teams (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          quiz_id INTEGER NOT NULL,
-          name TEXT NOT NULL,
-          color TEXT NOT NULL,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE
-        )
-      `);
+      // Create teams table with database-specific syntax
+      if (global.dbHelper.getDbType() === 'mssql') {
+        await db.run(`
+          IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'teams')
+          BEGIN
+            CREATE TABLE teams (
+              id INT IDENTITY(1,1) PRIMARY KEY,
+              quiz_id INT NOT NULL,
+              name NVARCHAR(255) NOT NULL,
+              color NVARCHAR(50) NOT NULL,
+              created_at DATETIME DEFAULT GETDATE(),
+              CONSTRAINT FK_teams_quizzes FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE
+            )
+          END
+        `);
 
-      // Create player_teams table for tracking team membership
-      await db.run(`
-        CREATE TABLE IF NOT EXISTS player_teams (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          player_id INTEGER NOT NULL,
-          team_id INTEGER NOT NULL,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
-        )
-      `);
+        // Create player_teams table for tracking team membership
+        await db.run(`
+          IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'player_teams')
+          BEGIN
+            CREATE TABLE player_teams (
+              id INT IDENTITY(1,1) PRIMARY KEY,
+              player_id INT NOT NULL,
+              team_id INT NOT NULL,
+              created_at DATETIME DEFAULT GETDATE(),
+              CONSTRAINT FK_player_teams_teams FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
+            )
+          END
+        `);
+      } else {
+        // SQLite version
+        await db.run(`
+          CREATE TABLE IF NOT EXISTS teams (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            quiz_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            color TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE
+          )
+        `);
+
+        // Create player_teams table for tracking team membership
+        await db.run(`
+          CREATE TABLE IF NOT EXISTS player_teams (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            player_id INTEGER NOT NULL,
+            team_id INTEGER NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
+          )
+        `);
+      }
     } catch (error) {
       console.error('Error creating team tables:', error);
       throw error;
@@ -33,10 +64,23 @@ class Team {
 
   static async createTeams(quizId, teams) {
     const insertTeam = async (team) => {
+      // Make sure quizId is not null or undefined
+      if (quizId === null || quizId === undefined) {
+        throw new Error('Quiz ID cannot be null when creating teams');
+      }
+      
+      // Convert quizId to a number if it's a string
+      const numericQuizId = typeof quizId === 'string' ? parseInt(quizId, 10) : quizId;
+      
+      // Log the team creation attempt
+      console.log(`Creating team ${team.name} for quiz ID: ${numericQuizId}`);
+      
       const result = await db.run(`
-        INSERT INTO teams (quiz_id, name, color)
-        VALUES (?, ?, ?)
-      `, [quizId, team.name, team.color]);
+        INSERT INTO teams (quiz_id, name, color, created_at)
+        VALUES (?, ?, ?, ${global.dbHelper.getCurrentTimestamp()})
+      `, [numericQuizId, team.name, team.color]);
+      
+      console.log(`Team created with ID: ${result.lastID}`);
       return result.lastID;
     };
 
@@ -69,9 +113,14 @@ class Team {
 
   static async assignPlayerToTeam(playerId, teamId) {
     try {
+      // Validate inputs
+      if (!playerId || !teamId) {
+        throw new Error('Player ID and Team ID cannot be null');
+      }
+      
       await db.run(`
-        INSERT INTO player_teams (player_id, team_id)
-        VALUES (?, ?)
+        INSERT INTO player_teams (player_id, team_id, created_at)
+        VALUES (?, ?, ${global.dbHelper.getCurrentTimestamp()})
       `, [playerId, teamId]);
     } catch (error) {
       console.error('Error assigning player to team:', error);
