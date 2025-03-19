@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../config/env';
 import Header from '../components/Header';
+import Footer from '../components/Footer';
+
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 
@@ -148,16 +150,20 @@ const JoinPage = () => {
               </button>
             </form>
           </div>
+          <Footer/>
         </div>
+
       </div>
+
       </div>
-    );
+    );       
+
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col">
       <Header />
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         
         <div className="bg-white rounded-xl shadow-lg p-8 transform transition-all duration-300 hover:shadow-xl">
@@ -249,10 +255,16 @@ const JoinPage = () => {
               Join Game
             </button>
           </form>
+
         </div>
+
       </div>
+
     </div>
+    <Footer/>
+
     </div>
+    
   );
 };
 

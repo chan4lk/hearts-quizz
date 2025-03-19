@@ -3,6 +3,8 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import useSocket from '../hooks/useSocket';
 import ProgressBar from '../components/common/ProgressBar';
 import Header from '../components/Header';
+import Footer from '../components/Footer';
+
 import GameOverMessage from '../components/GameOverMessage';
 import TeamLeaderboard from '../components/game/TeamLeaderboard'; // Import TeamLeaderboard component
 
@@ -227,6 +229,7 @@ const GamePage = () => {
                 </div>
               </div>
             </div>
+            <Footer/>
           </div>
         </div>
       ) : !currentQuestion ? (

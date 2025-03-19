@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import StepIndicator from '../components/common/StepIndicator';
 import Header from '../components/Header'
+import Footer from '../components/Footer';
+
 
 import QuizCreationSteps from '../components/quiz/QuizCreationSteps';
 import { getStepValidator } from '../utils/quizValidation';
@@ -247,6 +249,8 @@ const CreateQuizPage = () => {
             )}
           </div>
         </div>
+        <Footer />
+
       </div>
     </div>
     </div>

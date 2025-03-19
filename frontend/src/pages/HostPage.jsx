@@ -4,6 +4,7 @@ import useSocket from '../hooks/useSocket';
 import axios from 'axios';
 import { API_URL } from '../config/env';
 import Header from '../components/Header';
+import Footer from '../components/Footer';
 import GameOverMessage from '../components/GameOverMessage';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -184,41 +185,41 @@ const HostPage = () => {
       <Header userName="Host" />
       {(!currentQuestion && winner) && <GameOverMessage winner={winner} />}
       
-      <div className="p-4 max-w-6xl mx-auto">
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-          <div className="flex items-center mb-6">
+      <div className="p-2 sm:p-4 w-full max-w-6xl mx-auto">
+        <div className="bg-white rounded-xl shadow-lg p-3 sm:p-6 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center mb-4 sm:mb-6 gap-2">
             <button 
-              className="mr-4 text-gray-600 hover:text-gray-800 transition-colors p-2 rounded-full hover:bg-gray-100" 
+              className="text-gray-600 hover:text-gray-800 transition-colors p-2 rounded-full hover:bg-gray-100" 
               onClick={handleBack}
               aria-label="Back"
             >
               <ArrowBackIcon />
             </button>
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-gray-800 flex items-center">
+              <h1 className="text-xl sm:text-3xl font-bold text-gray-800 flex items-center">
                 <QuizIcon className="mr-2 text-blue-600" />
-                Hosting: {quiz?.title}
+                <span className="truncate">Hosting: {quiz?.title}</span>
               </h1>
             </div>
-            <div className="ml-4 bg-blue-50 text-blue-700 px-4 py-2 rounded-lg font-semibold flex items-center">
-              <span className="mr-2">PIN:</span> 
-              <span className="text-2xl">{pin}</span>
+            <div className="bg-blue-50 text-blue-700 px-3 py-1 sm:px-4 sm:py-2 rounded-lg font-semibold flex items-center">
+              <span className="mr-1 sm:mr-2">PIN:</span> 
+              <span className="text-xl sm:text-2xl">{pin}</span>
             </div>
           </div>
 
-          <div className="mb-8 p-5 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="mb-6 p-3 sm:p-5 bg-gray-50 rounded-lg border border-gray-200">
             <div className="flex items-center mb-3 text-blue-600">
               <LinkIcon className="mr-2" />
               <h2 className="text-lg font-semibold">Share with players</h2>
             </div>
             
-            <div className="flex items-center gap-3">
-              <div className="flex-1 bg-white border border-gray-300 rounded-lg p-3 text-blue-600 hover:text-blue-800 truncate">
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <div className="w-full flex-1 bg-white border border-gray-300 rounded-lg p-2 sm:p-3 text-blue-600 hover:text-blue-800 truncate overflow-hidden text-sm sm:text-base">
                 {gameLink}
               </div>
               <button
                 onClick={handleCopyLink}
-                className={`px-4 py-3 text-white rounded-lg flex items-center transition-colors ${
+                className={`w-full sm:w-auto px-3 py-2 sm:px-4 sm:py-3 text-white rounded-lg flex items-center justify-center transition-colors ${
                   copySuccess ? 'bg-green-500' : 'bg-blue-500 hover:bg-blue-600'
                 }`}
               >
@@ -227,60 +228,61 @@ const HostPage = () => {
               </button>
             </div>
             
-            <p className="mt-3 text-sm text-gray-600 flex items-center">
-              <HelpOutlineIcon className="mr-2 text-gray-400" fontSize="small" />
+            <p className="mt-3 text-xs sm:text-sm text-gray-600 flex flex-wrap items-center">
+              <HelpOutlineIcon className="mr-1 text-gray-400" fontSize="small" />
               Players can also visit <span className="font-semibold mx-1">{window.location.origin}</span> and enter PIN: <span className="font-semibold ml-1">{pin}</span>
             </p>
           </div>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg flex items-center">
-              <ErrorIcon className="mr-2" />
-              {error}
+            <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-50 text-red-700 rounded-lg flex items-center text-sm sm:text-base">
+              <ErrorIcon className="mr-2 flex-shrink-0" />
+              <span>{error}</span>
             </div>
           )}
 
           {!gameStarted ? (
             <>
-              <div className="mb-8">
+              <div className="mb-6 sm:mb-8">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold text-gray-700 flex items-center">
+                  <h2 className="text-lg sm:text-xl font-semibold text-gray-700 flex items-center">
                     <PeopleIcon className="mr-2 text-blue-600" />
                     Players ({players.length})
                   </h2>
                   <button
                     onClick={handleDisconnectAll}
-                    className={`px-4 py-2 text-white rounded-lg transition-colors flex items-center ${
+                    className={`px-3 py-1 sm:px-4 sm:py-2 text-white rounded-lg transition-colors flex items-center text-sm sm:text-base ${
                       players.length === 0
                         ? 'bg-red-300 cursor-not-allowed'
                         : 'bg-red-500 hover:bg-red-600'
                     }`}
                     disabled={players.length === 0}
                   >
-                    <LogoutIcon className="mr-2" />
-                    Disconnect All
+                    <LogoutIcon className="mr-1 sm:mr-2" />
+                    <span className="hidden xs:inline">Disconnect All</span>
+                    <span className="xs:hidden">All</span>
                   </button>
                 </div>
 
                 {players.length === 0 ? (
-                  <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                    <PersonAddIcon className="text-gray-400 mb-2" style={{ fontSize: '48px' }} />
+                  <div className="text-center py-6 sm:py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                    <PersonAddIcon className="text-gray-400 mb-2" style={{ fontSize: '36px' }} />
                     <p className="text-gray-500">Waiting for players to join...</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
                     {players.map((player, index) => (
                       <div
                         key={index}
-                        className="bg-gray-50 rounded-lg p-3 text-center border border-gray-200 hover:shadow-md transition-shadow"
+                        className="bg-gray-50 rounded-lg p-2 sm:p-3 text-center border border-gray-200 hover:shadow-md transition-shadow"
                       >
                         <div className="flex flex-col items-center">
-                          <span className="text-gray-800 font-medium">
+                          <span className="text-gray-800 font-medium truncate max-w-full">
                             {typeof player === 'string' ? player : player.name}
                           </span>
                           {typeof player !== 'string' && player.team && (
                             <span
-                              className="text-sm px-2 py-1 rounded mt-1"
+                              className="text-xs sm:text-sm px-2 py-1 rounded mt-1 truncate max-w-full"
                               style={{
                                 backgroundColor: player.team.color + '22',
                                 color: player.team.color
@@ -299,7 +301,7 @@ const HostPage = () => {
               <button
                 onClick={handleStartGame}
                 disabled={players.length === 0}
-                className={`w-full py-3 px-6 rounded-lg text-white font-semibold flex items-center justify-center ${
+                className={`w-full py-3 px-4 sm:px-6 rounded-lg text-white font-semibold flex items-center justify-center ${
                   players.length === 0
                     ? 'bg-gray-400 cursor-not-allowed'
                     : 'bg-green-500 hover:bg-green-600'
@@ -313,19 +315,19 @@ const HostPage = () => {
             <div className="container mx-auto">
               <div className="max-w-4xl mx-auto">
                 {currentQuestion && !showLeaderboard && (
-                  <div className="bg-white rounded-lg shadow-lg p-6 mb-6 border border-gray-200">
-                    <div className="flex justify-between items-center mb-5">
-                      <h2 className="text-xl font-semibold flex items-center">
+                  <div className="bg-white rounded-lg shadow-lg p-3 sm:p-6 mb-4 sm:mb-6 border border-gray-200">
+                    <div className="flex flex-col xs:flex-row justify-between xs:items-center mb-3 sm:mb-5 gap-2">
+                      <h2 className="text-lg sm:text-xl font-semibold flex items-center">
                         <QuizIcon className="mr-2 text-blue-600" />
                         Question {currentQuestion.number} of {quiz?.questions?.length}
                       </h2>
-                      <div className="text-2xl font-bold text-blue-600 flex items-center">
+                      <div className="text-xl sm:text-2xl font-bold text-blue-600 flex items-center">
                         <AccessTimeIcon className="mr-2" />
                         {timeLeft}s
                       </div>
                     </div>
 
-                    <div className="w-full bg-gray-200 rounded-full h-2.5 mb-6">
+                    <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4 sm:mb-6">
                       <div
                         className="bg-blue-600 h-2.5 rounded-full transition-all duration-1000"
                         style={{
@@ -334,7 +336,7 @@ const HostPage = () => {
                       ></div>
                     </div>
 
-                    <p className="text-lg mb-4 p-3 bg-gray-50 rounded-lg">{currentQuestion.text}</p>
+                    <p className="text-base sm:text-lg mb-4 p-2 sm:p-3 bg-gray-50 rounded-lg">{currentQuestion.text}</p>
                     {currentQuestion.image && (
                       <div className="mb-4 flex justify-center">
                         <img
@@ -345,15 +347,15 @@ const HostPage = () => {
                       </div>
                     )}
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 xs:grid-cols-2 gap-2 sm:gap-4">
                       {currentQuestion.options.map((option, index) => (
                         <div
                           key={index}
-                          className={`p-4 rounded-lg ${
+                          className={`p-2 sm:p-4 rounded-lg ${
                             index === currentQuestion.correctAnswer
                               ? 'bg-green-100 border-green-500'
                               : 'bg-gray-100 border-gray-300'
-                          } border-2 shadow-sm transition-all hover:shadow-md`}
+                          } border-2 shadow-sm transition-all hover:shadow-md text-sm sm:text-base`}
                         >
                           {option}
                         </div>
@@ -363,17 +365,17 @@ const HostPage = () => {
                 )}
 
                 {showLeaderboard && leaderboard && (
-                  <div className="bg-white rounded-lg shadow-lg p-6 border border-gray-200">
-                    <h2 className="text-2xl font-bold mb-6 text-center flex items-center justify-center">
+                  <div className="bg-white rounded-lg shadow-lg p-3 sm:p-6 border border-gray-200">
+                    <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-center flex items-center justify-center">
                       <EmojiEventsIcon className="mr-2 text-yellow-500" />
                       Leaderboard
                     </h2>
                     
-                    <div className="space-y-4">
+                    <div className="space-y-2 sm:space-y-4">
                       {leaderboard.map((player, index) => (
                         <div
                           key={player.name}
-                          className={`flex items-center justify-between p-4 rounded-lg transition-all ${
+                          className={`flex items-center justify-between p-2 sm:p-4 rounded-lg transition-all ${
                             index === 0 ? 'bg-yellow-50 border border-yellow-200' : 
                             index === 1 ? 'bg-gray-50 border border-gray-200' : 
                             index === 2 ? 'bg-orange-50 border border-orange-200' : 
@@ -381,7 +383,7 @@ const HostPage = () => {
                           }`}
                         >
                           <div className="flex items-center">
-                            <span className={`text-lg font-bold flex items-center justify-center h-8 w-8 rounded-full mr-4 ${
+                            <span className={`text-base sm:text-lg font-bold flex items-center justify-center h-6 w-6 sm:h-8 sm:w-8 rounded-full mr-2 sm:mr-4 ${
                               index === 0 ? 'bg-yellow-500 text-white' : 
                               index === 1 ? 'bg-gray-400 text-white' : 
                               index === 2 ? 'bg-orange-500 text-white' : 
@@ -389,11 +391,11 @@ const HostPage = () => {
                             }`}>
                               {index + 1}
                             </span>
-                            <div className="flex items-center">
-                              <span className="text-lg">{player.name}</span>
+                            <div className="flex flex-col xs:flex-row xs:items-center">
+                              <span className="text-sm sm:text-lg truncate max-w-28 xs:max-w-full">{player.name}</span>
                               {player.team && (
                                 <span
-                                  className="ml-2 text-sm px-2 py-1 rounded"
+                                  className="xs:ml-2 text-xs sm:text-sm px-1 sm:px-2 py-0.5 sm:py-1 rounded truncate max-w-28 xs:max-w-full"
                                   style={{
                                     backgroundColor: player.team.color + '22',
                                     color: player.team.color
@@ -404,22 +406,22 @@ const HostPage = () => {
                               )}
                             </div>
                           </div>
-                          <span className="text-lg font-semibold">{player.score} pts</span>
+                          <span className="text-base sm:text-lg font-semibold ml-2">{player.score} pts</span>
                         </div>
                       ))}
                     </div>
 
                     {!currentQuestion && (
-                      <div className="mt-8 text-center">
-                        <div className="text-xl font-bold text-blue-600 mb-6 flex items-center justify-center">
+                      <div className="mt-6 sm:mt-8 text-center">
+                        <div className="text-lg sm:text-xl font-bold text-blue-600 mb-4 sm:mb-6 flex items-center justify-center">
                           <EmojiEventsIcon className="mr-2 text-yellow-500" />
                           Game Over!
                         </div>
-                        <div className="flex gap-4">
+                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
                           <button
                             onClick={handleStartGame}
                             disabled={players.length === 0}
-                            className={`flex-1 py-3 px-6 rounded-lg text-white font-semibold flex items-center justify-center ${
+                            className={`w-full py-2 sm:py-3 px-4 sm:px-6 rounded-lg text-white font-semibold flex items-center justify-center ${
                               players.length === 0
                                 ? 'bg-gray-400 cursor-not-allowed'
                                 : 'bg-green-500 hover:bg-green-600'
@@ -430,7 +432,7 @@ const HostPage = () => {
                           </button>
                           <button
                             onClick={handleDisconnectAll}
-                            className={`px-6 text-white rounded-lg transition-colors flex items-center justify-center ${
+                            className={`w-full sm:w-auto py-2 sm:py-3 px-4 sm:px-6 text-white rounded-lg transition-colors flex items-center justify-center ${
                               players.length === 0
                                 ? 'bg-red-300 cursor-not-allowed'
                                 : 'bg-red-500 hover:bg-red-600'
@@ -446,8 +448,8 @@ const HostPage = () => {
 
                     {currentQuestion && (
                       <button
-                        onClick={() => socket.emit('next_question', { pin })}
-                        className="mt-6 w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+                        onClick={handleNextQuestion}
+                        className="mt-4 sm:mt-6 w-full bg-blue-600 text-white py-2 sm:py-3 px-4 sm:px-6 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
                       >
                         <NavigateNextIcon className="mr-2" />
                         Next Question
@@ -456,24 +458,24 @@ const HostPage = () => {
                   </div>
                 )}
 
-                <div className="mt-8">
-                  <h3 className="text-xl font-semibold mb-4 flex items-center">
+                <div className="mt-6 sm:mt-8">
+                  <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 flex items-center">
                     <PeopleIcon className="mr-2 text-blue-600" />
                     Players ({players.length})
                   </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-4">
                     {players.map((player, index) => (
                       <div
                         key={index}
-                        className="bg-white rounded-lg shadow-sm p-3 text-center border border-gray-200 hover:shadow-md transition-shadow"
+                        className="bg-white rounded-lg shadow-sm p-2 sm:p-3 text-center border border-gray-200 hover:shadow-md transition-shadow"
                       >
                         <div className="flex flex-col items-center">
-                          <span className="text-gray-800 font-medium">
+                          <span className="text-gray-800 font-medium truncate max-w-full">
                             {typeof player === 'string' ? player : player.name}
                           </span>
                           {typeof player !== 'string' && player.team && (
                             <span
-                              className="text-sm px-2 py-1 rounded mt-1"
+                              className="text-xs sm:text-sm px-1 sm:px-2 py-0.5 sm:py-1 rounded mt-1 truncate max-w-full"
                               style={{
                                 backgroundColor: player.team.color + '22',
                                 color: player.team.color
@@ -492,6 +494,8 @@ const HostPage = () => {
           )}
         </div>
       </div>
+      <Footer/>
+
     </div>
   );
 };

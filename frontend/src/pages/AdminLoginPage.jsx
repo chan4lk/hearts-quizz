@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../components/Header';
+import Footer from '../components/Footer';
+
 
 import { 
   ArrowBack, 
@@ -161,8 +163,12 @@ const AdminLoginPage = () => {
           <div className="mt-6 text-center text-sm text-gray-500">
             Need help? <a href="#" className="font-medium text-blue-600 hover:text-blue-500">Contact support</a>
           </div>
+          
         </div>
+        
       </div>
+      <Footer />
+
     </div>
   );
 };
