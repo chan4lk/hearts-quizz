@@ -1,6 +1,7 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as resources from "@pulumi/azure-native/resources";
 import * as web from "@pulumi/azure-native/web";
+import * as sql from "@pulumi/azure-native/sql";
 
 // Configuration
 const projectName = "bistecquizz";
@@ -56,6 +57,33 @@ const backendApp = new web.WebApp("backend", {
     },
 });
 
+// Get SQL admin password from config
+const config = new pulumi.Config();
+const sqlPassword = config.requireSecret("sqlPassword");
+
+// Create SQL Server
+const sqlServer = new sql.Server("sqlserver", {
+    resourceGroupName: resourceGroup.name,
+    location: resourceGroup.location,
+    administratorLogin: "sqladmin",
+    administratorLoginPassword: sqlPassword,
+    version: "12.0",
+});
+
+// Create SQL Database with 5 DTU (Basic tier)
+const sqlDatabase = new sql.Database("sqldb", {
+    resourceGroupName: resourceGroup.name,
+    serverName: sqlServer.name,
+    sku: {
+        name: "Basic",
+        tier: "Basic",
+        capacity: 5, // 5 DTU
+    },
+    maxSizeBytes: 2147483648, // 2GB
+});
+
 // Export the endpoints
 export const frontendUrl = pulumi.interpolate`https://${frontendApp.defaultHostName}`;
 export const backendUrl = pulumi.interpolate`https://${backendApp.defaultHostName}`;
+export const sqlServerName = sqlServer.name;
+export const sqlDatabaseName = sqlDatabase.name;
