@@ -142,7 +142,6 @@ const QuizPage = ({ socket }) => {
       </div>
       
     );
-                <Footer/>
 
   }
 

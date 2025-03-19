@@ -7,7 +7,6 @@ import Footer from '../components/Footer';
 
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
-
 const JoinPage = () => {
   const navigate = useNavigate();
   const { pin: urlPin } = useParams();
@@ -97,205 +96,173 @@ const JoinPage = () => {
 
   if (!quiz) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col">
-      <Header />
-      <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex  justify-center p-4">
-        <div className="max-w-md w-full">
-          
-          <div className="bg-white rounded-xl shadow-lg p-8 transform transition-all duration-300 hover:shadow-xl">
-          <button className="text-gray-600" onClick={handleBack}>
-            <ArrowBackIcon />
-          </button>
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 mb-2">
-                Join Quiz
-              </h1>
-              <p className="text-gray-600">Enter the game PIN to start</p>
-            </div>
-            
-
-            <form onSubmit={handlePinSubmit} className="space-y-6">
-              <div>
-                <label
-                  htmlFor="pin"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Game PIN
-                </label>
-                <div className="relative">
-                  <input
-                    id="pin"
-                    type="text"
-                    value={pin}
-                    onChange={(e) => setPin(e.target.value.trim())}
-                    placeholder="Enter game PIN"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    disabled={isLoading}
-                    required
-                  />
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                    <svg className="h-5 w-5" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
-                      <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8V7a4 4 0 00-8 0v4h8z" />
+      <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-50 flex flex-col">
+        <div className="flex-grow flex items-center justify-center p-4">
+        <Header />
+          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full transform transition-all duration-300 hover:scale-105">
+            <div className="flex flex-col items-center space-y-6">
+              <div className="p-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full shadow-lg">
+                <svg className="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <h1 className="text-3xl font-bold text-gray-800">Join the Quiz</h1>
+              <form onSubmit={handlePinSubmit} className="w-full space-y-6">
+                <div className="space-y-4">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={pin}
+                      onChange={(e) => setPin(e.target.value.trim())}
+                      placeholder="Enter Quiz PIN"
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      disabled={isLoading}
+                      required
+                    />
+                    <svg className="absolute right-3 top-3 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                   </div>
                 </div>
+                {error && (
+                  <div className="text-red-500 text-sm text-center">{error}</div>
+                )}
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className={`w-full bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold py-3 rounded-lg hover:shadow-lg transition-all duration-200 transform hover:scale-105 ${
+                    isLoading ? 'bg-gray-400 cursor-not-allowed' : ''
+                  }`}
+                >
+                  {isLoading ? 'Finding Quiz...' : 'Find Quiz'}
+                </button>
+              </form>
+            </div>
+          </div>
+       </div>
+       <Footer /> 
+      </div>
+    );       
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-50 flex flex-col">
+      <div className="flex-grow flex items-center justify-center p-4">
+      <Header />
+        <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full transform transition-all duration-300 hover:scale-105">
+          <div className="flex flex-col items-center space-y-6">
+            <div className="p-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full shadow-lg">
+              <svg className="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-800">{quiz.title}</h1>
+            <form onSubmit={handleJoinSubmit} className="w-full space-y-6">
+              <div className="space-y-4">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Your Name"
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                    required
+                  />
+                  <svg className="absolute right-3 top-3 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
               </div>
+              {singleTeamMode && quiz.teams && quiz.teams.length > 0 && (
+                <div className="bg-white rounded-lg shadow-sm p-4 border-l-4" style={{ borderColor: quiz.teams[0].color }}>
+                  <div className="flex items-center">
+                    <div
+                      className="w-10 h-10 rounded-full mr-3"
+                      style={{ backgroundColor: quiz.teams[0].color }}
+                    />
+                    <div>
+
+                      <div className="font-medium" style={{ color: quiz.teams[0].color }}>
+                        {quiz.teams[0].name}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        You will join this team automatically
+
+                      </div>
+
+                    </div>
+                  </div>
+
+                </div>
+                
+
+              )}
+              {!singleTeamMode && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Your Team
+                  </label>
+                  <div className="grid grid-cols-2 gap-4">
+                    {quiz.teams.map((team) => (
+                      <button
+                        key={team.id}
+                        type="button"
+                        onClick={() => setSelectedTeam(team)}
+                        className={`p-4 rounded-lg border-2 transition-all duration-200 ${
+                          selectedTeam?.id === team.id
+                            ? 'shadow-lg transform scale-105'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                        style={{
+                          borderColor: selectedTeam?.id === team.id ? team.color : undefined,
+                          backgroundColor: selectedTeam?.id === team.id ? `${team.color}22` : undefined
+                        }}
+                      >
+                        <div className="text-center">
+                          <div
+                            className={`w-10 h-10 mx-auto rounded-full mb-2 transition-all duration-200 ${
+                              selectedTeam?.id === team.id ? 'transform scale-110' : ''
+                            }`}
+                            style={{ 
+                              backgroundColor: selectedTeam?.id === team.id ? team.color : team.color + '33'
+                            }}
+                          />
+                          <div 
+                            className={`font-medium transition-all duration-200 ${
+                              selectedTeam?.id === team.id ? 'text-lg' : 'text-base'
+                            }`}
+                            style={{ color: team.color }}
+                          >
+                            {team.name}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+              )}
 
               {error && (
                 <div className="text-red-500 text-sm text-center">{error}</div>
               )}
-
               <button
                 type="submit"
-                disabled={isLoading}
-                className={`w-full py-3 px-4 text-white font-medium rounded-lg transition-colors ${
-                  isLoading
+                disabled={!name}
+                className={`w-full bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold py-3 rounded-lg hover:shadow-lg transition-all duration-200 transform hover:scale-105 ${
+                  !name
                     ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
+                    : ''
                 }`}
               >
-                {isLoading ? 'Finding Quiz...' : 'Find Quiz'}
+                Join Game
               </button>
             </form>
-
           </div>
         </div>
-
       </div>
       <Footer/>
-
-
-      </div>
-    );       
-
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col">
-      <Header />
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
-        
-        <div className="bg-white rounded-xl shadow-lg p-8 transform transition-all duration-300 hover:shadow-xl">
-        <button className="text-gray-600" onClick={handleBack}>
-            <ArrowBackIcon />
-          </button>
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 mb-2">
-              {quiz.title}
-            </h1>
-            <p className="text-gray-600">Enter your name to join</p>
-          </div>
-
-          <form onSubmit={handleJoinSubmit} className="space-y-6">
-            <div>
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Your Name
-              </label>
-              <input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter your name"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                required
-              />
-            </div>
-
-            {singleTeamMode && quiz.teams && quiz.teams.length > 0 && (
-              <div className="bg-white rounded-lg shadow-sm p-4 border-l-4" style={{ borderColor: quiz.teams[0].color }}>
-                <div className="flex items-center">
-                  <div
-                    className="w-10 h-10 rounded-full mr-3"
-                    style={{ backgroundColor: quiz.teams[0].color }}
-                  />
-                  <div>
-                    <div className="font-medium" style={{ color: quiz.teams[0].color }}>
-                      {quiz.teams[0].name}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      You will join this team automatically
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {!singleTeamMode && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Your Team
-                </label>
-                <div className="grid grid-cols-2 gap-4">
-                  {quiz.teams.map((team) => (
-                    <button
-                      key={team.id}
-                      type="button"
-                      onClick={() => setSelectedTeam(team)}
-                      className={`p-4 rounded-lg border-2 transition-all duration-200 ${
-                        selectedTeam?.id === team.id
-                          ? 'shadow-lg transform scale-105'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                      style={{
-                        borderColor: selectedTeam?.id === team.id ? team.color : undefined,
-                        backgroundColor: selectedTeam?.id === team.id ? `${team.color}22` : undefined
-                      }}
-                    >
-                      <div className="text-center">
-                        <div
-                          className={`w-10 h-10 mx-auto rounded-full mb-2 transition-all duration-200 ${
-                            selectedTeam?.id === team.id ? 'transform scale-110' : ''
-                          }`}
-                          style={{ 
-                            backgroundColor: selectedTeam?.id === team.id ? team.color : team.color + '33'
-                          }}
-                        />
-                        <div 
-                          className={`font-medium transition-all duration-200 ${
-                            selectedTeam?.id === team.id ? 'text-lg' : 'text-base'
-                          }`}
-                          style={{ color: team.color }}
-                        >
-                          {team.name}
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {error && (
-              <div className="text-red-500 text-sm text-center">{error}</div>
-            )}
-
-            <button
-              type="submit"
-              disabled={!name}
-              className={`w-full py-3 px-4 text-white font-medium rounded-lg transition-colors ${
-                !name
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
-              }`}
-            >
-              Join Game
-            </button>
-          </form>
-
-        </div>
-
-      </div>
-
     </div>
-    <Footer/>
-
-    </div>
-    
   );
 };
 

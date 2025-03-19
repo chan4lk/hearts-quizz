@@ -188,8 +188,8 @@ const GamePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col">
-      <Header userName={playerName}>
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-50 flex flex-col">
+    <Header userName={playerName}>
         {renderTeamBadge()}
       </Header>
       {(!currentQuestion && winner)  && <GameOverMessage winner={winner} />}
@@ -204,17 +204,16 @@ const GamePage = () => {
           <Footer />
         </div>
       ) : !isConnected ? (
-        <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col p-4">
-          <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+        <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-50 flex flex-col">
+        <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
             <div className="text-gray-600 text-center">
               Waiting for connection...
             </div>
           </div>
-          <Footer />
         </div>
       ) : showLeaderboard ? (
-        <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col p-4">
-          <div className="max-w-4xl mx-auto flex-grow">
+        <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-50 flex flex-col">
+        <div className="max-w-4xl mx-auto flex-grow">
             <h2 className="text-2xl font-bold text-center mb-6">Game Results</h2>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
@@ -259,89 +258,99 @@ const GamePage = () => {
               </div>
             </div>
           </div>
+<Footer/>
         </div>
       ) : !currentQuestion ? (
-        <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col p-4">
-          <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+        <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-50 flex flex-col">
+        <div className="max-w-md mx-auto bg- rounded-lg shadow-md p-6">
             <h2 className="text-2xl font-bold text-center mb-4">
               Waiting for quiz to start...
             </h2>
             <p className="text-gray-600 text-center">
               The host will start the quiz shortly
             </p>
+            
           </div>
+          <Footer />
+
         </div>
 
+
       ) : (
-        <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col p-4">
-          <div className="max-w-2xl mx-auto flex-grow">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              {timeLeft !== null && currentQuestion?.timeLimit && (
-                <div className="mb-6">
-                  <div className="text-center mb-2">
-                    <div className="text-2xl font-bold text-blue-600">
-                      {timeLeft}s
+        
+        <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-50 flex flex-col p-4">
+          <div className="flex-grow p-4">
+            <div className="max-w-2xl mx-auto">
+              <div className="bg-white rounded-xl shadow-2xl p-8 transform transition-all duration-300 hover:scale-105">
+                {timeLeft !== null && currentQuestion?.timeLimit && (
+                  <div className="mb-6">
+                    <div className="text-center mb-2">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {timeLeft}s
+                      </div>
+                    </div>
+                    <ProgressBar timeLeft={timeLeft} totalTime={currentQuestion.timeLimit} />
+                  </div>
+                )}
+
+                <h2 className="text-xl font-bold mb-6">
+                  {currentQuestion?.text}
+                </h2>
+
+                {currentQuestion?.image && (
+                  <div className="mb-6">
+                    <img
+                      src={currentQuestion.image}
+                      alt="Question"
+                      className="w-full max-h-64 object-contain rounded-lg"
+                    />
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-4 mt-8">
+                  {currentQuestion.options.map((option, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleAnswerSelect(index)}
+                      disabled={answered || showCorrectAnswer}
+                      className={`
+                        p-4 rounded-lg shadow-md transition-colors duration-200
+                        ${getButtonColor(index)}
+                        ${answered || showCorrectAnswer ? 'cursor-default' : 'cursor-pointer'}
+                        disabled:opacity-70
+                      `}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+
+                {answered && !showCorrectAnswer && (
+                  <div className="mt-6 text-center text-gray-600">
+                    <svg className="h-6 w-6 inline-block mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Answer submitted! Waiting for other players...
+                  </div>
+                )}
+
+                {showCorrectAnswer && (
+                  <div className="mt-6 text-center">
+                    <div className={`text-xl font-bold ${selectedAnswer === correctAnswer ? 'text-green-600' : 'text-red-600'}`}>
+                      {selectedAnswer === correctAnswer ? 'Correct!' : 'Wrong!'}
+                    </div>
+                    <div className="text-gray-600 mt-2">
+                      The correct answer was: {currentQuestion.options[correctAnswer]}
                     </div>
                   </div>
-                  <ProgressBar timeLeft={timeLeft} totalTime={currentQuestion.timeLimit} />
-                </div>
-              )}
-
-              <h2 className="text-xl font-bold mb-6">
-                {currentQuestion?.text}
-              </h2>
-
-              {currentQuestion?.image && (
-                <div className="mb-6">
-                  <img
-                    src={currentQuestion.image}
-                    alt="Question"
-                    className="w-full max-h-64 object-contain rounded-lg"
-                  />
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-4 mt-8">
-                {currentQuestion.options.map((option, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleAnswerSelect(index)}
-                    disabled={answered || showCorrectAnswer}
-                    className={`
-                      p-4 rounded-lg shadow-md transition-colors duration-200
-                      ${getButtonColor(index)}
-                      ${answered || showCorrectAnswer ? 'cursor-default' : 'cursor-pointer'}
-                      disabled:opacity-70
-                    `}
-                  >
-                    {option}
-                  </button>
-                ))}
+                )}
               </div>
-
-              {answered && !showCorrectAnswer && (
-                <div className="mt-6 text-center text-gray-600">
-                  Answer submitted! Waiting for other players...
-                </div>
-              )}
-
-              {showCorrectAnswer && (
-                <div className="mt-6 text-center">
-                  <div className={`text-xl font-bold ${selectedAnswer === correctAnswer ? 'text-green-600' : 'text-red-600'}`}>
-                    {selectedAnswer === correctAnswer ? 'Correct!' : 'Wrong!'}
-                  </div>
-                  <div className="text-gray-600 mt-2">
-                    The correct answer was: {currentQuestion.options[correctAnswer]}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
+          <Footer />
         </div>
 
       )}
-                        <Footer />
-
     </div>
     
   );
