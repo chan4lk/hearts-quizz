@@ -11,10 +11,7 @@ const Header = ({ userName }) => {
   const isHomePage = location.pathname === '/';
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
-  };
-
+  
   return (
           
 
@@ -31,45 +28,13 @@ const Header = ({ userName }) => {
             Q
           </div>
             <span className="ml-3 text-xl font-bold text-gray-800">BistecQuizz</span>
-            <span className="sm:hidden">BQ</span>
           </Link>
           
-          {/* Mobile menu toggle */}
-          <button 
-            className="md:hidden text-white p-2 rounded-lg hover:bg-blue-700 transition-colors"
-            onClick={toggleMobileMenu}
-            aria-label="Toggle navigation menu"
-          >
-            <MenuIcon />
-          </button>
           
-          {/* Desktop navigation */}
-          <div className="hidden md:flex items-center space-x-6">
-            <Link 
-              to="/" 
-              className="flex items-center text-white hover:text-blue-200 transition-colors px-3 py-2"
-            >
-              
-            </Link>
-            
-           
-          </div>
+          
         </div>
         
-        {/* Mobile menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden mt-4 bg-blue-800 bg-opacity-90 rounded-lg p-4 shadow-lg">
-            <Link 
-              to="/" 
-              className="flex items-center text-white hover:text-blue-200 transition-colors px-3 py-2 mb-2"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-
-            </Link>
-            
-           
-          </div>
-        )}
+        
       </div>
     </header>
   );

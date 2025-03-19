@@ -5,6 +5,9 @@ COPY package.json package-lock* ./
 RUN npm ci
 COPY . .
 RUN npm run build
+ENV PORT=5001
+EXPOSE 3000
+
 
 # Production stage
 FROM node:18-alpine
