@@ -194,25 +194,27 @@ const GamePage = () => {
       </Header>
       {(!currentQuestion && winner)  && <GameOverMessage winner={winner} />}
       {error ? (
-        <div className="p-4">
+        <div className="p-4 flex-grow">
           <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
             <div className="text-red-600 text-center">{error}</div>
             <div className="text-gray-600 text-center mt-2">
               Redirecting to join page...
             </div>
           </div>
+          <Footer />
         </div>
       ) : !isConnected ? (
         <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col p-4">
-        <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+          <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
             <div className="text-gray-600 text-center">
               Waiting for connection...
             </div>
           </div>
+          <Footer />
         </div>
       ) : showLeaderboard ? (
         <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col p-4">
-        <div className="max-w-4xl mx-auto">
+          <div className="max-w-4xl mx-auto flex-grow">
             <h2 className="text-2xl font-bold text-center mb-6">Game Results</h2>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
@@ -256,12 +258,11 @@ const GamePage = () => {
                 </div>
               </div>
             </div>
-            <Footer/>
           </div>
         </div>
       ) : !currentQuestion ? (
         <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col p-4">
-        <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+          <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
             <h2 className="text-2xl font-bold text-center mb-4">
               Waiting for quiz to start...
             </h2>
@@ -270,9 +271,10 @@ const GamePage = () => {
             </p>
           </div>
         </div>
+
       ) : (
         <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col p-4">
-        <div className="max-w-2xl mx-auto">
+          <div className="max-w-2xl mx-auto flex-grow">
             <div className="bg-white rounded-lg shadow-md p-6">
               {timeLeft !== null && currentQuestion?.timeLimit && (
                 <div className="mb-6">
@@ -336,8 +338,12 @@ const GamePage = () => {
             </div>
           </div>
         </div>
+
       )}
+                        <Footer />
+
     </div>
+    
   );
 };
 

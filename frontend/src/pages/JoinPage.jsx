@@ -157,11 +157,13 @@ const JoinPage = () => {
                 {isLoading ? 'Finding Quiz...' : 'Find Quiz'}
               </button>
             </form>
+
           </div>
-          <Footer/>
         </div>
 
       </div>
+      <Footer/>
+
 
       </div>
     );       

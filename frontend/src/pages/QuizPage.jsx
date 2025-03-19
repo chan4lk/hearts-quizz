@@ -140,7 +140,10 @@ const QuizPage = ({ socket }) => {
         ))}
         <p className="mt-4">Waiting for next question...</p>
       </div>
+      
     );
+                <Footer/>
+
   }
 
   return (
