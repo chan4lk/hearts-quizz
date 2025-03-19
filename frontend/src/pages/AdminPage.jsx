@@ -298,7 +298,7 @@ const AdminPage = () => {
                 {/* Table Header for desktop */}
                 <div className="hidden sm:grid grid-cols-12 bg-gray-100 py-3 px-4 sm:px-6 border-b border-gray-200">
                   <div 
-                    className="col-span-5 font-medium text-gray-700 cursor-pointer flex items-center"
+                    className="col-span-5 font-medium text-gray-700 cursor-pointer flex items-center pl-2"
                     onClick={() => handleSort('title')}
                   >
                     Quiz Title
@@ -309,7 +309,7 @@ const AdminPage = () => {
                     )}
                   </div>
                   <div 
-                    className="col-span-2 font-medium text-gray-700 cursor-pointer flex items-center"
+                    className="col-span-2 font-medium text-gray-700 cursor-pointer flex items-center justify-center"
                     onClick={() => handleSort('questions')}
                   >
                     Questions
@@ -320,7 +320,7 @@ const AdminPage = () => {
                     )}
                   </div>
                   <div className="col-span-2 font-medium text-gray-700 text-center">PIN</div>
-                  <div className="col-span-3 font-medium text-gray-700 text-center">Actions</div>
+                  <div className="col-span-3 font-medium text-gray-700 text-center pr-2">Actions</div>
                 </div>
                 
                 {/* Table Body */}
@@ -345,30 +345,30 @@ const AdminPage = () => {
                           <span className="text-sm text-gray-600">{quiz.question_count} questions</span>
                         </div>
                         
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 w-full">
                           <button
                             onClick={() => handleStartQuiz(quiz)}
-                            className="flex-1 bg-green-500 text-white px-3 py-2 rounded-lg font-medium hover:bg-green-600 transition-all duration-150 flex items-center justify-center text-sm"
+                            className="flex-1 bg-green-500 text-white px-3 py-2 rounded-lg font-medium hover:bg-green-600 transition-all duration-150 flex items-center justify-center text-sm gap-1"
                             aria-label="Start Quiz"
                           >
-                            <PlayArrow className="h-4 w-4 mr-1" />
-                            Start
+                            <PlayArrow className="h-4 w-4" />
+                            <span>Start</span>
                           </button>
                           <button
                             onClick={() => handleEditQuestions(quiz)}
-                            className="flex-1 bg-blue-500 text-white px-3 py-2 rounded-lg font-medium hover:bg-blue-600 transition-all duration-150 flex items-center justify-center text-sm"
+                            className="flex-1 bg-blue-500 text-white px-3 py-2 rounded-lg font-medium hover:bg-blue-600 transition-all duration-150 flex items-center justify-center text-sm gap-1"
                             aria-label="Edit Questions"
                           >
-                            <Edit className="h-4 w-4 mr-1" />
-                            Edit
+                            <Edit className="h-4 w-4" />
+                            <span>Edit</span>
                           </button>
                           <button
                             onClick={() => handleDeleteQuiz(quiz.id, quiz.title)}
-                            className="flex-1 bg-red-500 text-white px-3 py-2 rounded-lg font-medium hover:bg-red-600 transition-all duration-150 flex items-center justify-center text-sm"
+                            className="flex-1 bg-red-500 text-white px-3 py-2 rounded-lg font-medium hover:bg-red-600 transition-all duration-150 flex items-center justify-center text-sm gap-1"
                             aria-label="Delete Quiz"
                           >
-                            <Delete className="h-4 w-4 mr-1" />
-                            Delete
+                            <Delete className="h-4 w-4" />
+                            <span>Delete</span>
                           </button>
                         </div>
                       </div>
@@ -425,7 +425,7 @@ const AdminPage = () => {
             
             {/* Edit Questions Section */}
             {editingQuizId && (
-              <div className="mt-8 border-t border-gray-200 pt-6 sm:pt-8">
+              <div className="mt-8 border-t border-gray-200 pt-6 sm:pt-8 px-4 sm:px-0">
                 <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-800 flex items-center">
                   <Edit className="h-5 w-5 sm:h-6 sm:w-6 mr-2 text-blue-600" />
                   Edit Questions
