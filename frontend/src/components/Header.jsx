@@ -51,7 +51,7 @@ const Header = ({ userName, children }) => {
       <header className={`bg-blue-100 fixed top-0 left-0 right-0 w-full z-50 transition-all duration-300 ${
         scrolled ? 'py-2 bg-blue-100 backdrop-blur-sm' : 'py-4'
       }`}>
-        <div className="max-w-6xl mx-auto px-4 md:px-8 lg:px-16 flex justify-between items-center">
+        <div className="max-w-6xl mx-auto px-4 flex justify-between items-center">
           {/* Logo - Left side */}
           <div className="flex items-center">
             <Link
