@@ -122,7 +122,7 @@ class Quiz {
           )
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ${global.dbHelper.getCurrentTimestamp()})
         `, [
-          quizId, q.text, q.imageUrl || '/quiz.jpeg', q.timeLimit || 30, q.points || 1000,
+          quizId, q.text, q.imageUrl || '/up.png', q.timeLimit || 30, q.points || 1000,
           JSON.stringify(q.options), q.correctAnswer, i
         ]);
       }
@@ -160,7 +160,7 @@ class Quiz {
           )
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ${global.dbHelper.getCurrentTimestamp()})
         `, [
-          quizId, q.text, q.imageUrl || '/quiz.jpeg', q.timeLimit || 30, q.points || 1000,
+          quizId, q.text, q.imageUrl || '', q.timeLimit || 30, q.points || 1000,
           JSON.stringify(q.options), q.correctAnswer, i
         ]);
       }

@@ -123,7 +123,7 @@ async function createQuestionsTable() {
         id INT IDENTITY(1,1) PRIMARY KEY,
         quiz_id INT NOT NULL,
         text NVARCHAR(MAX) NOT NULL,
-        image_url NVARCHAR(255) DEFAULT '/quiz.jpeg',
+        image_url NVARCHAR(255) DEFAULT '/up.png',
         time_limit INT DEFAULT 30,
         points INT DEFAULT 1000,
         options NVARCHAR(MAX) NOT NULL,

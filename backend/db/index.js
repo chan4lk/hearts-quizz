@@ -108,7 +108,7 @@ async function initSqlite() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       quiz_id INTEGER NOT NULL,
       text TEXT NOT NULL,
-      image_url TEXT DEFAULT '/quiz.jpeg',
+      image_url TEXT DEFAULT '/up.png',
       time_limit INTEGER DEFAULT 30,
       points INTEGER DEFAULT 1000,
       options TEXT NOT NULL,

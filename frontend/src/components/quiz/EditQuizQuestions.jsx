@@ -10,7 +10,7 @@ import CloseIcon from '@mui/icons-material/Close';
 const EditQuizQuestions = ({ quiz, onQuestionsUpdated }) => {
   const [questions, setQuestions] = useState(quiz?.questions ? quiz.questions.map(q => ({
     text: q.text,
-    imageUrl: q.image || '/quiz.jpeg',
+    imageUrl: q.image || '/up.png',
     timeLimit: q.timeLimit,
     points: q.points,
     options: q.options,
@@ -45,7 +45,7 @@ const EditQuizQuestions = ({ quiz, onQuestionsUpdated }) => {
       ...questions,
       {
         text: '',
-        imageUrl: '/quiz.jpeg',
+        imageUrl: '/up.png',
         timeLimit: 30,
         points: 1000,
         options: ['', '', '', ''],
@@ -90,7 +90,7 @@ const EditQuizQuestions = ({ quiz, onQuestionsUpdated }) => {
     const newQuestions = [...questions];
     newQuestions[index] = {
       ...newQuestions[index],
-      imageUrl: '/quiz.jpeg'
+      imageUrl: '/up.png'
     };
     setQuestions(newQuestions);
   };
@@ -148,27 +148,23 @@ const EditQuizQuestions = ({ quiz, onQuestionsUpdated }) => {
                 </IconButton>
               </Tooltip>
             </div>
-            <div className="mb-4">
-              <div className="relative w-full h-48 rounded-lg overflow-hidden bg-gray-100">
-                <img
-                  src={question.imageUrl}
-                  alt="Question"
-                  className="w-full h-full object-contain"
-                />
-                {question.imageUrl !== '/quiz.jpeg' && (
-                  <div className="absolute top-2 right-2">
+            
+            <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium">Question {index + 1}</h3>
+                <div className="flex items-center space-x-2">
+                  {question.imageUrl && (
                     <Tooltip title="Remove Image">
                       <IconButton
                         onClick={() => handleImageRemove(index)}
                         size="small"
-                        className="bg-white/80 hover:bg-white shadow-md"
+                        color="error"
+                        className="hover:bg-red-50"
                       >
                         <CloseIcon />
                       </IconButton>
                     </Tooltip>
-                  </div>
-                )}
-                <div className="absolute bottom-2 right-2">
+                  )}
                   <input
                     type="file"
                     accept="image/*"
@@ -180,7 +176,8 @@ const EditQuizQuestions = ({ quiz, onQuestionsUpdated }) => {
                     <Tooltip title="Upload Image">
                       <IconButton
                         component="span"
-                        className="bg-white/80 hover:bg-white shadow-md"
+                        color="primary"
+                        className="hover:bg-blue-50"
                       >
                         <CloudUploadIcon />
                       </IconButton>
@@ -188,7 +185,20 @@ const EditQuizQuestions = ({ quiz, onQuestionsUpdated }) => {
                   </label>
                 </div>
               </div>
+              
+              {question.imageUrl && (
+                <div className="mt-4">
+                  <div className="relative w-full h-48 rounded-lg overflow-hidden bg-gray-50 border border-gray-200">
+                    <img
+                      src={question.imageUrl}
+                      alt="Question"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
+
             <QuestionForm
               question={question}
               onQuestionChange={(field, value) => handleQuestionChange(index, field, value)}

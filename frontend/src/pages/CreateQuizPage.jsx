@@ -26,7 +26,7 @@ const INITIAL_QUIZ_STATE = {
   questions: [
     {
       text: '',
-      imageUrl: '/quiz.jpeg',
+      imageUrl: '/up.png',
       timeLimit: 30,
       points: 1000,
       options: ['', '', '', ''],
@@ -66,7 +66,7 @@ const CreateQuizPage = () => {
         ...prev.questions,
         {
           text: '',
-          imageUrl: '/quiz.jpeg',
+          imageUrl: '/up.png',
           timeLimit: 30,
           points: 1000,
           options: ['', '', '', ''],
