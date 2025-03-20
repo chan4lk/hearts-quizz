@@ -1,8 +1,9 @@
 import React from 'react';
-import { Button } from '@mui/material';
+import { Button, IconButton, Tooltip } from '@mui/material';
 import QuizBasicForm from '../forms/QuizBasicForm';
 import QuestionForm from '../forms/QuestionForm';
 import TeamsForm from '../forms/TeamsForm';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 const QuizCreationSteps = ({
   currentStep,
@@ -53,16 +54,29 @@ const QuizCreationSteps = ({
         return (
           <div className="space-y-8">
             {quiz.questions.map((question, index) => (
-              <QuestionForm
-                key={index}
-                question={question}
-                onQuestionChange={(field, value) =>
-                  onQuestionChange(index, field, value)
-                }
-                onRemove={() => onQuestionRemove(index)}
-                isLast={index === quiz.questions.length - 1}
-                icons={icons}
-              />
+              <div key={index} className="relative">
+                <div className="absolute -top-4 -right-4 z-10">
+                  <Tooltip title="Remove Question">
+                    <IconButton
+                      onClick={() => onQuestionRemove(index)}
+                      color="error"
+                      className="bg-white shadow-md hover:bg-red-50"
+                      size="small"
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Tooltip>
+                </div>
+                <QuestionForm
+                  question={question}
+                  onQuestionChange={(field, value) =>
+                    onQuestionChange(index, field, value)
+                  }
+                  onRemove={() => onQuestionRemove(index)}
+                  isLast={index === quiz.questions.length - 1}
+                  icons={icons}
+                />
+              </div>
             ))}
             
             <div className="flex flex-col gap-4">
