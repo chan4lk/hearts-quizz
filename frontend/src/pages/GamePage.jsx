@@ -264,7 +264,7 @@ const GamePage = () => {
   // Loading/Connection Screen
   if (!isConnected) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-50 flex flex-col">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col">
         <Header userName={playerName}>
           {renderTeamBadge()}
         </Header>
@@ -288,7 +288,7 @@ const GamePage = () => {
   // Error Screen
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-50 flex flex-col">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col">
         <Header userName={playerName}>
           {renderTeamBadge()}
         </Header>
@@ -313,7 +313,7 @@ const GamePage = () => {
   // Game Over Screen
   if (!currentQuestion && winner) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-50 flex flex-col">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col">
         <Header userName={playerName}>
           {renderTeamBadge()}
         </Header>
@@ -326,7 +326,7 @@ const GamePage = () => {
   // Leaderboard Screen
   if (showLeaderboard) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-50 flex flex-col">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col">
         <Header userName={playerName}>
           {renderTeamBadge()}
         </Header>
@@ -398,7 +398,7 @@ const GamePage = () => {
   // Waiting for Quiz Screen
   if (!currentQuestion) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-50 flex flex-col">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col">
         <Header userName={playerName}>
           {renderTeamBadge()}
         </Header>
@@ -444,7 +444,7 @@ const GamePage = () => {
 
   // Question Screen
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col">
       <Header userName={playerName}>
         {renderTeamBadge()}
       </Header>

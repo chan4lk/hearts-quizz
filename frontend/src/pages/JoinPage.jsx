@@ -86,7 +86,7 @@ const JoinPage = () => {
 
   if (!quiz) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-50 flex flex-col">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col">
         <div className="flex-grow flex items-center justify-center p-4">
           <Header />
           <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full transform transition-all duration-300 hover:scale-105">
@@ -136,10 +136,10 @@ const JoinPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col">
       <div className="flex-grow flex items-center justify-center p-4">
         <Header />
-        <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full transform transition-all duration-300 hover:scale-105">
+        <div className="bg-white rounded-xl shadow-1xl p-2 max-w-md w-full transform transition-all duration-300 hover:scale-105">
           <div className="flex flex-col items-center space-y-6">
             <div className="p-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full shadow-lg">
               <svg className="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -115,9 +115,9 @@ const CreateQuizPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col">
       <Header />
-      <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col">
         <div className="max-w-4xl mx-auto px-4">
           <div className="bg-white rounded-lg shadow-lg p-8 transition-all duration-300">
             <div className="flex justify-between items-center mb-6">

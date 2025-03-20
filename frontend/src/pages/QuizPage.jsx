@@ -122,7 +122,7 @@ const QuizPage = ({ socket }) => {
 
   if (showLeaderboard) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col">
       <h2 className="text-2xl font-bold mb-4">Leaderboard</h2>
         {leaderboard.map((player, index) => (
           <div
@@ -146,7 +146,7 @@ const QuizPage = ({ socket }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col">
       <div className="mb-4">
         <div className="flex justify-between items-center mb-2">
           <div>Question {currentQuestion.questionNumber} of {currentQuestion.totalQuestions}</div>

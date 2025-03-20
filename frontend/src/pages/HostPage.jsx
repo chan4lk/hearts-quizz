@@ -181,7 +181,7 @@ const HostPage = () => {
   const gameLink = `${window.location.origin}/join/${pin}`;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col">
       <Header userName="Host" />
       {(!currentQuestion && winner) && <GameOverMessage winner={winner} />}
       
