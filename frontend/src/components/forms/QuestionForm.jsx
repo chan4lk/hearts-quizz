@@ -1,9 +1,30 @@
 import React, { useState } from 'react';
-import { TextField, Button, IconButton } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
+import { 
+  TextField, 
+  Button, 
+  IconButton, 
+  Tooltip, 
+  Slider, 
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Paper,
+  Typography
+} from '@mui/material';
+import { 
+  Delete as DeleteIcon,
+  AccessTime as TimeIcon,
+  EmojiEvents as PointsIcon,
+  CheckCircle as CorrectIcon,
+  RadioButtonUnchecked as UncheckedIcon,
+  CloudUpload as UploadIcon,
+  Help as HelpIcon
+} from '@mui/icons-material';
 
 const QuestionForm = ({ question, onQuestionChange, onRemove, isLast }) => {
   const [imagePreview, setImagePreview] = useState(question.imageUrl || '/quiz.jpeg');
+  const [dragActive, setDragActive] = useState(false);
 
   const handleFieldChange = (field, value) => {
     onQuestionChange(field, value);
@@ -17,6 +38,10 @@ const QuestionForm = ({ question, onQuestionChange, onRemove, isLast }) => {
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
+    processImageFile(file);
+  };
+
+  const processImageFile = (file) => {
     if (file) {
       // Check file size (limit to 5MB)
       if (file.size > 5 * 1024 * 1024) {
@@ -33,18 +58,45 @@ const QuestionForm = ({ question, onQuestionChange, onRemove, isLast }) => {
     }
   };
 
+  // Handle drag and drop functionality
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      processImageFile(e.dataTransfer.files[0]);
+    }
+  };
+
   return (
-    <div className="p-6 border rounded-lg bg-white shadow-sm">
+    <Paper elevation={2} className="p-6 rounded-lg bg-white mb-6">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">Question</h3>
+        <div className="flex items-center gap-2">
+          <HelpIcon color="primary" />
+          <Typography variant="h6" component="h3">Question</Typography>
+        </div>
         {!isLast && (
-          <IconButton
-            onClick={onRemove}
-            color="error"
-            aria-label="delete question"
-          >
-            <DeleteIcon />
-          </IconButton>
+          <Tooltip title="Remove question">
+            <IconButton
+              onClick={onRemove}
+              color="error"
+              aria-label="delete question"
+              size="small"
+            >
+              <DeleteIcon />
+            </IconButton>
+          </Tooltip>
         )}
       </div>
       
@@ -56,60 +108,106 @@ const QuestionForm = ({ question, onQuestionChange, onRemove, isLast }) => {
           onChange={(e) => handleFieldChange('text', e.target.value)}
           placeholder="Enter your question"
           variant="outlined"
+          InputProps={{
+            endAdornment: (
+              <Tooltip title="Enter the question you want to ask">
+                <HelpIcon color="action" fontSize="small" />
+              </Tooltip>
+            )
+          }}
         />
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <Typography variant="subtitle2" className="mb-2">
             Question Image
-          </label>
-          <div className="flex items-start space-x-4">
-            <img
-              src={imagePreview}
-              alt="Question"
-              className="w-32 h-32 object-cover rounded border"
-              onError={(e) => {
-                e.target.src = '/quiz.jpeg';
-                setImagePreview('/quiz.jpeg');
-              }}
-            />
-            <div className="flex-1">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
-              />
-              <p className="mt-1 text-sm text-gray-500">
-                Upload an image for this question (optional)
-              </p>
+          </Typography>
+          <div 
+            className={`border-2 border-dashed rounded-lg p-4 transition-colors ${dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+          >
+            <div className="flex items-start space-x-4">
+              <div className="w-32 h-32 relative">
+                <img
+                  src={imagePreview}
+                  alt="Question"
+                  className="w-full h-full object-cover rounded border"
+                  onError={(e) => {
+                    e.target.src = '/quiz.jpeg';
+                    setImagePreview('/quiz.jpeg');
+                  }}
+                />
+              </div>
+              <div className="flex-1">
+                <label htmlFor="image-upload" className="cursor-pointer">
+                  <div className="flex items-center space-x-2 text-blue-600 hover:text-blue-800">
+                    <UploadIcon />
+                    <span>Upload an image</span>
+                  </div>
+                  <input
+                    id="image-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                </label>
+                <p className="mt-1 text-sm text-gray-500">
+                  Drop an image here or click to upload (max 5MB)
+                </p>
+              </div>
             </div>
           </div>
         </div>
         
-        <div className="grid grid-cols-2 gap-4">
-          <TextField
-            type="number"
-            label="Time Limit (seconds)"
-            value={question.timeLimit}
-            onChange={(e) => handleFieldChange('timeLimit', parseInt(e.target.value, 10))}
-            inputProps={{ min: 5, max: 60 }}
-            variant="outlined"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <TimeIcon color="action" fontSize="small" />
+              <Typography variant="subtitle2">Time Limit (seconds)</Typography>
+            </div>
+            <Slider
+              value={question.timeLimit}
+              onChange={(e, newValue) => handleFieldChange('timeLimit', newValue)}
+              aria-labelledby="time-limit-slider"
+              valueLabelDisplay="auto"
+              step={5}
+              marks
+              min={5}
+              max={60}
+            />
+            <Typography variant="body2" className="text-center mt-2">
+              {question.timeLimit} seconds
+            </Typography>
+          </div>
 
-          <TextField
-            type="number"
-            label="Points"
-            value={question.points}
-            onChange={(e) => handleFieldChange('points', parseInt(e.target.value, 10))}
-            inputProps={{ min: 100, max: 2000, step: 100 }}
-            variant="outlined"
-          />
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <PointsIcon color="action" fontSize="small" />
+              <Typography variant="subtitle2">Points</Typography>
+            </div>
+            <FormControl fullWidth>
+              <Select
+                value={question.points}
+                onChange={(e) => handleFieldChange('points', e.target.value)}
+                displayEmpty
+              >
+                {[100, 200, 300, 500, 1000, 2000].map((value) => (
+                  <MenuItem key={value} value={value}>
+                    {value} points
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </div>
         </div>
 
         <div className="space-y-4">
-          <label className="block text-sm font-medium text-gray-700">
+          <Typography variant="subtitle2">
             Answer Options
-          </label>
+          </Typography>
           {question.options.map((option, optionIndex) => (
             <div key={optionIndex} className="flex items-center space-x-2">
               <TextField
@@ -119,18 +217,23 @@ const QuestionForm = ({ question, onQuestionChange, onRemove, isLast }) => {
                 placeholder={`Option ${optionIndex + 1}`}
                 variant="outlined"
               />
-              <Button
-                variant={question.correctAnswer === optionIndex ? "contained" : "outlined"}
-                onClick={() => handleFieldChange('correctAnswer', optionIndex)}
-                color="primary"
-              >
-                Correct
-              </Button>
+              <Tooltip title={question.correctAnswer === optionIndex ? "Currently correct" : "Mark as correct"}>
+                <IconButton
+                  onClick={() => handleFieldChange('correctAnswer', optionIndex)}
+                  color={question.correctAnswer === optionIndex ? "success" : "default"}
+                  aria-label={`mark option ${optionIndex + 1} as correct`}
+                >
+                  {question.correctAnswer === optionIndex ? 
+                    <CorrectIcon /> : 
+                    <UncheckedIcon />
+                  }
+                </IconButton>
+              </Tooltip>
             </div>
           ))}
         </div>
       </div>
-    </div>
+    </Paper>
   );
 };
 
