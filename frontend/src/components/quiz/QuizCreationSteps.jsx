@@ -8,16 +8,14 @@ const QuizCreationSteps = ({
   currentStep,
   quiz,
   onBasicInfoChange,
-  onTeamAdd,
-  onTeamRemove,
-  onTeamNameChange,
+  onTeamsChange,
   onQuestionChange,
   onQuestionAdd,
   onQuestionRemove,
   onStepChange,
   onSubmit,
   isStepValid,
-  singleTeamMode = true, 
+  singleTeamMode = false,
   icons = {}
 }) => {
   const handleNext = () => {
@@ -46,12 +44,9 @@ const QuizCreationSteps = ({
         return (
           <TeamsForm
             teams={quiz.teams}
-            onTeamAdd={onTeamAdd}
-            onTeamRemove={onTeamRemove}
-            onTeamNameChange={onTeamNameChange}
+            onTeamsChange={onTeamsChange}
             onPrevious={handlePrevious}
             onNext={handleNext}
-            singleTeamMode={singleTeamMode}
           />
         );
       case 2:

@@ -22,9 +22,7 @@ const INITIAL_QUIZ_STATE = {
   title: '',
   description: '',
   category: '',
-  teams: [
-    { id: 1, name: 'Student', color: '#4B9CD3' }  // Single default team with blue color - cannot be changed
-  ],
+  teams: [],
   questions: [
     {
       text: '',
@@ -48,7 +46,10 @@ const CreateQuizPage = () => {
     setQuiz(prev => ({ ...prev, [field]: value }));
   };
 
-  // Team functions removed since we're using a single fixed team
+  const handleTeamsChange = (teams) => {
+    console.log('Teams changed:', teams);
+    setQuiz(prev => ({ ...prev, teams }));
+  };
 
   const handleQuestionChange = (index, field, value) => {
     setQuiz(prev => {
@@ -159,6 +160,7 @@ const CreateQuizPage = () => {
               currentStep={currentStep}
               quiz={quiz}
               onBasicInfoChange={handleBasicInfoChange}
+              onTeamsChange={handleTeamsChange}
               onQuestionChange={handleQuestionChange}
               onQuestionAdd={handleQuestionAdd}
               onQuestionRemove={handleQuestionRemove}
@@ -175,7 +177,7 @@ const CreateQuizPage = () => {
                 save: <SaveIcon />
               }}
               isSaving={saving}
-              singleTeamMode={true} // Flag to indicate single team mode - no team selection allowed
+              singleTeamMode={false}
             />
             
             {/* Navigation buttons removed since they're now in each step component */}

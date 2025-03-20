@@ -4,20 +4,31 @@ import {
   Typography,
   List,
   ListItem,
-  ListItemText,
+  Box,
   Divider
 } from '@mui/material';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 
 const TeamLeaderboard = ({ teams, players }) => {
   // Calculate team scores based on player scores
-  
+  const teamScores = teams.map(team => {
+    const teamPlayers = players.filter(player => player.teamId === team.id);
+    const totalScore = teamPlayers.reduce((sum, player) => sum + (player.score || 0), 0);
+    const averageScore = teamPlayers.length > 0 ? totalScore / teamPlayers.length : 0;
+
+    return {
+      ...team,
+      totalScore,
+      averageScore,
+      playerCount: teamPlayers.length
+    };
+  }).sort((a, b) => b.totalScore - a.totalScore);
 
   return (
     <div className="max-w-2xl mx-auto">
       <Paper elevation={2} className="overflow-hidden">
         <List className="divide-y">
-          {teams.map((team, index) => (
+          {teamScores.map((team, index) => (
             <ListItem
               key={team.id}
               className="p-4"
@@ -51,7 +62,7 @@ const TeamLeaderboard = ({ teams, players }) => {
                   <div className="flex gap-4 text-sm text-gray-600">
                     <span>Score: {team.totalScore}</span>
                     <span>Avg: {team.averageScore.toFixed(1)}</span>
-                    <span>Players: {team.players.length}</span>
+                    <span>Players: {team.playerCount}</span>
                   </div>
                 </div>
               </div>
