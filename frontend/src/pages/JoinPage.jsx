@@ -4,7 +4,6 @@ import axios from 'axios';
 import { API_URL } from '../config/env';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 const JoinPage = () => {
@@ -16,31 +15,20 @@ const JoinPage = () => {
   const [quiz, setQuiz] = useState(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const singleTeamMode = true; // Set to true to enable single team mode
 
   const handleBack = () => {
     if (urlPin) {
-      // If we came from a direct PIN URL, go back to the join page
       navigate('/join');
     } else {
-      // Otherwise use the browser's back navigation
       navigate(-1);
     }
   };
-
-  // Auto-select the first team when quiz is loaded in single team mode
-  useEffect(() => {
-    if (quiz && quiz.teams && quiz.teams.length > 0 && singleTeamMode) {
-      setSelectedTeam(quiz.teams[0]);
-    }
-  }, [quiz]);
 
   const handlePinSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    // Validate input
     const cleanPin = pin.trim();
 
     if (!cleanPin) {
@@ -50,7 +38,6 @@ const JoinPage = () => {
     }
 
     try {
-      // First verify the quiz exists
       const response = await axios.get(`${API_URL}/api/quizzes/pin/${cleanPin}`);
       if (response.data) {
         setQuiz(response.data);
@@ -71,7 +58,6 @@ const JoinPage = () => {
     e.preventDefault();
     setError('');
 
-    // Validate input
     const cleanName = name.trim();
 
     if (!cleanName) {
@@ -84,7 +70,11 @@ const JoinPage = () => {
       return;
     }
 
-    // Navigate to game page with player info
+    if (!selectedTeam) {
+      setError('Please select a team');
+      return;
+    }
+
     navigate(`/game/${pin}`, { 
       state: { 
         playerName: cleanName,
@@ -98,7 +88,7 @@ const JoinPage = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-50 flex flex-col">
         <div className="flex-grow flex items-center justify-center p-4">
-        <Header />
+          <Header />
           <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full transform transition-all duration-300 hover:scale-105">
             <div className="flex flex-col items-center space-y-6">
               <div className="p-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full shadow-lg">
@@ -139,16 +129,16 @@ const JoinPage = () => {
               </form>
             </div>
           </div>
-       </div>
-       <Footer /> 
+        </div>
+        <Footer />
       </div>
-    );       
+    );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-50 flex flex-col">
       <div className="flex-grow flex items-center justify-center p-4">
-      <Header />
+        <Header />
         <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full transform transition-all duration-300 hover:scale-105">
           <div className="flex flex-col items-center space-y-6">
             <div className="p-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full shadow-lg">
@@ -173,84 +163,62 @@ const JoinPage = () => {
                   </svg>
                 </div>
               </div>
-              {singleTeamMode && quiz.teams && quiz.teams.length > 0 && (
-                <div className="bg-white rounded-lg shadow-sm p-4 border-l-4" style={{ borderColor: quiz.teams[0].color }}>
-                  <div className="flex items-center">
-                    <div
-                      className="w-10 h-10 rounded-full mr-3"
-                      style={{ backgroundColor: quiz.teams[0].color }}
-                    />
-                    <div>
 
-                      <div className="font-medium" style={{ color: quiz.teams[0].color }}>
-                        {quiz.teams[0].name}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        You will join this team automatically
-
-                      </div>
-
-                    </div>
-                  </div>
-
-                </div>
-                
-
-              )}
-              {!singleTeamMode && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Select Your Team
-                  </label>
-                  <div className="grid grid-cols-2 gap-4">
-                    {quiz.teams.map((team) => (
-                      <button
-                        key={team.id}
-                        type="button"
-                        onClick={() => setSelectedTeam(team)}
-                        className={`p-4 rounded-lg border-2 transition-all duration-200 ${
-                          selectedTeam?.id === team.id
-                            ? 'shadow-lg transform scale-105'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                        style={{
-                          borderColor: selectedTeam?.id === team.id ? team.color : undefined,
-                          backgroundColor: selectedTeam?.id === team.id ? `${team.color}22` : undefined
-                        }}
-                      >
-                        <div className="text-center">
-                          <div
-                            className={`w-10 h-10 mx-auto rounded-full mb-2 transition-all duration-200 ${
-                              selectedTeam?.id === team.id ? 'transform scale-110' : ''
-                            }`}
-                            style={{ 
-                              backgroundColor: selectedTeam?.id === team.id ? team.color : team.color + '33'
-                            }}
-                          />
-                          <div 
-                            className={`font-medium transition-all duration-200 ${
-                              selectedTeam?.id === team.id ? 'text-lg' : 'text-base'
-                            }`}
-                            style={{ color: team.color }}
-                          >
-                            {team.name}
-                          </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Select Your Team
+                </label>
+                <div className="grid grid-cols-2 gap-4">
+                  {quiz.teams.map((team) => (
+                    <button
+                      key={team.id}
+                      type="button"
+                      onClick={() => setSelectedTeam(team)}
+                      className={`p-4 rounded-lg border-2 transition-all duration-200 ${
+                        selectedTeam?.id === team.id
+                          ? 'shadow-lg transform scale-105'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      style={{
+                        borderColor: selectedTeam?.id === team.id ? team.color : undefined,
+                        backgroundColor: selectedTeam?.id === team.id ? `${team.color}22` : undefined
+                      }}
+                    >
+                      <div className="text-center">
+                        <div
+                          className={`w-12 h-12 mx-auto rounded-full mb-2 transition-all duration-200 ${
+                            selectedTeam?.id === team.id ? 'transform scale-110' : ''
+                          }`}
+                          style={{ 
+                            backgroundColor: selectedTeam?.id === team.id ? team.color : team.color + '33'
+                          }}
+                        >
+                          <span className="text-white text-lg font-semibold flex items-center justify-center h-full">
+                            {team.name.charAt(0)}
+                          </span>
                         </div>
-                      </button>
-                    ))}
-                  </div>
+                        <div 
+                          className={`font-medium transition-all duration-200 ${
+                            selectedTeam?.id === team.id ? 'text-lg' : 'text-base'
+                          }`}
+                          style={{ color: team.color }}
+                        >
+                          {team.name}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
                 </div>
-                
-              )}
+              </div>
 
               {error && (
                 <div className="text-red-500 text-sm text-center">{error}</div>
               )}
               <button
                 type="submit"
-                disabled={!name}
+                disabled={!name || !selectedTeam}
                 className={`w-full bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold py-3 rounded-lg hover:shadow-lg transition-all duration-200 transform hover:scale-105 ${
-                  !name
+                  !name || !selectedTeam
                     ? 'bg-gray-400 cursor-not-allowed'
                     : ''
                 }`}
@@ -261,7 +229,7 @@ const JoinPage = () => {
           </div>
         </div>
       </div>
-      <Footer/>
+      <Footer />
     </div>
   );
 };
