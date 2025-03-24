@@ -11,7 +11,11 @@ function Footer() {
               <a href="https://bistecglobal.com/" target="_blank" rel="noopener noreferrer" className="group">
                 <img src="/Logo1.png" alt="BistecQuizz Logo" className="h-12 w-12 object-contain group-hover:scale-105 transition-transform duration-300" />
               </a>
-              <a href="https://quiz.bistecglobal.com/" target="_blank" rel="noopener noreferrer" className="ml-3 group">
+              <a 
+                href="https://quiz.bistecglobal.com" 
+                rel="noopener noreferrer" 
+                className="ml-3 group cursor-pointer"
+              >
                 <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:to-blue-900 transition-all duration-300">BistecQuizz</span>
               </a>
             </div>

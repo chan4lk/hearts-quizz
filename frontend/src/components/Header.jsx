@@ -54,11 +54,19 @@ const Header = ({ userName, children }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           {/* Logo - Left side */}
           <div className="flex items-center">
-              <a href="https://bistecglobal.com/" target="_blank" rel="noopener noreferrer" className="flex items-center group">
-                <img src="/Logo1.png" alt="BistecQuizz Logo" className="h-12 w-12 object-contain group-hover:scale-105 transition-transform duration-300" />
-                <span className="ml-3 text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:to-blue-900 transition-all duration-300">BistecQuizz</span>
+            <div className="flex items-center">
+              <a href="https://bistecglobal.com/" target="_blank" rel="noopener noreferrer" className="group">
+                <img src="/Logo1.png" alt="BistecQuizz Logo" className="h-12 w-16 object-contain group-hover:scale-105 transition-transform duration-300" />
+              </a>
+              <a 
+                href="https://quiz.bistecglobal.com" 
+                rel="noopener noreferrer" 
+                className="ml-3 group cursor-pointer"
+              >
+                <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:to-blue-900 transition-all duration-300">BistecQuizz</span>
               </a>
             </div>
+          </div>
           
           {/* Desktop Navigation - Right side */}
           <nav className="hidden md:flex items-center space-x-8">
