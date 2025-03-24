@@ -28,7 +28,3 @@ For security reasons, it's recommended to:
 2. Use a strong password
 3. Keep your .env file secure and never commit it to version control
 
-## Recreate DB
-```shell
-rm -f backend/db/khoot.sqlite && node backend/scripts/init-db.js
-```
