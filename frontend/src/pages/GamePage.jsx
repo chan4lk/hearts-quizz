@@ -469,16 +469,6 @@ const GamePage = () => {
               {currentQuestion?.text}
             </h2>
 
-            {currentQuestion?.image && (
-              <div className="mb-6">
-                <img
-                  src={currentQuestion.image}
-                  alt="Question"
-                  className="w-full max-h-64 object-contain rounded-lg"
-                />
-              </div>
-            )}
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
               {currentQuestion.options.map((option, index) => (
                 <button

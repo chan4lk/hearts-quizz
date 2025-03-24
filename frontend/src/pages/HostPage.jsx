@@ -367,16 +367,6 @@ const HostPage = () => {
                     </div>
 
                     <p className="text-base sm:text-lg mb-4 p-2 sm:p-3 bg-gray-50 rounded-lg">{currentQuestion.text}</p>
-                    {currentQuestion.image && (
-                      <div className="mb-4 flex justify-center">
-                        <img
-                          src={currentQuestion.image}
-                          alt="Question"
-                          className="max-w-full h-auto rounded-lg shadow-md"
-                        />
-                      </div>
-                    )}
-
                     <div className="grid grid-cols-1 xs:grid-cols-2 gap-2 sm:gap-4">
                       {currentQuestion.options.map((option, index) => (
                         <div

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   TextField, 
   Button, 
@@ -18,17 +18,10 @@ import {
   EmojiEvents as PointsIcon,
   CheckCircle as CorrectIcon,
   RadioButtonUnchecked as UncheckedIcon,
-  CloudUpload as UploadIcon,
-  Help as HelpIcon,
-  AddPhotoAlternate as AddPhotoIcon,
-  Close as CloseIcon
+  Help as HelpIcon
 } from '@mui/icons-material';
 
 const QuestionForm = ({ question, onQuestionChange, onRemove, isLast }) => {
-  const [imagePreview, setImagePreview] = useState(question.imageUrl || '/up.png');
-  const [dragActive, setDragActive] = useState(false);
-  const [showImageUpload, setShowImageUpload] = useState(false);
-
   const handleFieldChange = (field, value) => {
     onQuestionChange(field, value);
   };
@@ -37,54 +30,6 @@ const QuestionForm = ({ question, onQuestionChange, onRemove, isLast }) => {
     const newOptions = [...question.options];
     newOptions[optionIndex] = value;
     handleFieldChange('options', newOptions);
-  };
-
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    processImageFile(file);
-  };
-
-  const processImageFile = (file) => {
-    if (file) {
-      // Check file size (limit to 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('Image size should be less than 5MB');
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-        handleFieldChange('imageUrl', reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleDrag = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true);
-    } else if (e.type === 'dragleave') {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      processImageFile(e.dataTransfer.files[0]);
-    }
-  };
-
-  const handleRemoveImage = () => {
-    setImagePreview('');
-    handleFieldChange('imageUrl', '');
-    setShowImageUpload(false);
   };
 
   return (
@@ -96,7 +41,9 @@ const QuestionForm = ({ question, onQuestionChange, onRemove, isLast }) => {
         </div>
         {!isLast && (
           <Tooltip title="Remove question">
-            
+            <IconButton onClick={onRemove} color="error">
+              <DeleteIcon />
+            </IconButton>
           </Tooltip>
         )}
       </div>
@@ -117,76 +64,6 @@ const QuestionForm = ({ question, onQuestionChange, onRemove, isLast }) => {
             )
           }}
         />
-
-        {!showImageUpload && !imagePreview && (
-          <Button
-            startIcon={<AddPhotoIcon />}
-            variant="outlined"
-            color="primary"
-            onClick={() => setShowImageUpload(true)}
-            className="w-full"
-          >
-            Add Image to Question
-          </Button>
-        )}
-
-        {(showImageUpload || imagePreview) && (
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <Typography variant="subtitle2">
-                Question Image
-              </Typography>
-              <Tooltip title="Remove Image">
-                <IconButton
-                  onClick={handleRemoveImage}
-                  size="small"
-                  color="error"
-                >
-                  <CloseIcon />
-                </IconButton>
-              </Tooltip>
-            </div>
-            <div 
-              className={`border-2 border-dashed rounded-lg p-4 transition-colors ${dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
-            >
-              <div className="flex items-start space-x-4">
-                <div className="w-32 h-32 relative">
-                  <img
-                    src={imagePreview || '/placeholder-image.png'}
-                    alt=""
-                    className="w-full h-full object-cover rounded border"
-                    onError={(e) => {
-                      e.target.src = '/up.png';
-                      setImagePreview('/up.png');
-                    }}
-                  />
-                </div>
-                <div className="flex-1">
-                  <label htmlFor="image-upload" className="cursor-pointer">
-                    <div className="flex items-center space-x-2 text-blue-600 hover:text-blue-800">
-                      <UploadIcon />
-                      <span>Upload an image</span>
-                    </div>
-                    <input
-                      id="image-upload"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className="hidden"
-                    />
-                  </label>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Drop an image here or click to upload (max 5MB)
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
