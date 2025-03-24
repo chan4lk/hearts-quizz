@@ -20,6 +20,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import QuizIcon from '@mui/icons-material/Quiz';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import RefreshIcon from '@mui/icons-material/Refresh';
 
 const HostPage = () => {
   const { pin } = useParams();
@@ -102,6 +103,11 @@ const HostPage = () => {
       setWinner(winner);
     });
 
+    socket.on('players_list', ({ players }) => {
+      const gamePlayers = players.filter(p => p !== 'admin');
+      setPlayers(gamePlayers);
+    });
+
     return () => {
       socket.off('quiz_error');
       socket.off('quiz_data');
@@ -112,6 +118,7 @@ const HostPage = () => {
       socket.off('time_update');
       socket.off('show_leaderboard');
       socket.off('quiz_end');
+      socket.off('players_list');
     };
   }, [socket, isConnected, pin, navigate]);
 
@@ -179,6 +186,19 @@ const HostPage = () => {
     window.open(gameUrl, '_blank');
   };
   const gameLink = `${window.location.origin}/join/${pin}`;
+
+  const handleRefreshPlayers = () => {
+    if (pin && socket) {
+      // Disconnect and reconnect to refresh the socket connection
+      socket.disconnect();
+      socket.connect();
+      
+      // After reconnecting, rejoin the quiz room
+      setTimeout(() => {
+        socket.emit('join_quiz', { pin, playerName: 'admin' });
+      }, 100);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col">
@@ -249,19 +269,29 @@ const HostPage = () => {
                     <PeopleIcon className="mr-2 text-blue-600" />
                     Players ({players.length})
                   </h2>
-                  <button
-                    onClick={handleDisconnectAll}
-                    className={`px-3 py-1 sm:px-4 sm:py-2 text-white rounded-lg transition-colors flex items-center text-sm sm:text-base ${
-                      players.length === 0
-                        ? 'bg-red-300 cursor-not-allowed'
-                        : 'bg-red-500 hover:bg-red-600'
-                    }`}
-                    disabled={players.length === 0}
-                  >
-                    <LogoutIcon className="mr-1 sm:mr-2" />
-                    <span className="hidden xs:inline">Disconnect All</span>
-                    <span className="xs:hidden">All</span>
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleRefreshPlayers}
+                      className="px-3 py-1 sm:px-4 sm:py-2 text-white rounded-lg transition-colors flex items-center text-sm sm:text-base bg-blue-500 hover:bg-blue-600"
+                      title="Refresh Players"
+                    >
+                      <RefreshIcon className="mr-1 sm:mr-2" />
+                      <span className="hidden xs:inline">Refresh</span>
+                    </button>
+                    <button
+                      onClick={handleDisconnectAll}
+                      className={`px-3 py-1 sm:px-4 sm:py-2 text-white rounded-lg transition-colors flex items-center text-sm sm:text-base ${
+                        players.length === 0
+                          ? 'bg-red-300 cursor-not-allowed'
+                          : 'bg-red-500 hover:bg-red-600'
+                      }`}
+                      disabled={players.length === 0}
+                    >
+                      <LogoutIcon className="mr-1 sm:mr-2" />
+                      <span className="hidden xs:inline">Disconnect all players</span>
+                      <span className="xs:hidden">Disconnect All Players</span>
+                    </button>
+                  </div>
                 </div>
 
                 {players.length === 0 ? (
@@ -440,7 +470,7 @@ const HostPage = () => {
                             disabled={players.length === 0}
                           >
                             <LogoutIcon className="mr-2" />
-                            Disconnect All
+                            Disconnect all players
                           </button>
                         </div>
                       </div>
