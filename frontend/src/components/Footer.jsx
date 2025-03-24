@@ -3,8 +3,8 @@ import React from 'react';
 function Footer() {
   return (
     <footer className="bg-white text-gray-900 relative z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 sm:gap-12">
           {/* Company Info */}
           <div className="space-y-6">
             <div className="flex items-center">
@@ -16,7 +16,7 @@ function Footer() {
             <p className="text-gray-600 text-base leading-relaxed">
               Empowering education through interactive quizzes and learning experiences.
             </p>
-            <div className="flex space-x-4">
+            <div className="flex flex-wrap gap-4">
               <a href="https://www.facebook.com/bistecglobal" target="_blank" rel="noopener noreferrer" 
                 className="text-gray-600 hover:text-blue-600 transition-all duration-300 transform hover:scale-110">
                 <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
@@ -79,7 +79,6 @@ function Footer() {
             </ul>
           </div>
 
-          {/* Support */}
           {/* Support */}
           <div>
             <h3 className="text-xl font-semibold mb-6 text-gray-900 border-b border-blue-600 pb-2 inline-block">Support</h3>
@@ -145,18 +144,11 @@ function Footer() {
           </div>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="mt-16 pt-8 border-t border-gray-200">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-600 text-base">
-              © {new Date().getFullYear()} BistecQuizz. All rights reserved.
-            </p>
-            <div className="flex space-x-8 mt-4 md:mt-0">
-              <a href="/privacy" className="text-gray-600 hover:text-blue-600 text-base transition-colors duration-300">Privacy Policy</a>
-              <a href="/terms" className="text-gray-600 hover:text-blue-600 text-base transition-colors duration-300">Terms of Service</a>
-              <a href="/cookies" className="text-gray-600 hover:text-blue-600 text-base transition-colors duration-300">Cookie Policy</a>
-            </div>
-          </div>
+        {/* Copyright */}
+        <div className="mt-12 pt-8 border-t border-gray-200">
+          <p className="text-center text-gray-600 text-base">
+            © {new Date().getFullYear()} BistecQuizz. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>
