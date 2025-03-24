@@ -66,10 +66,7 @@ function Footer() {
                 <span className="w-1 h-1 bg-blue-600 rounded-full mr-2 transform group-hover:scale-150 transition-transform duration-300"></span>
                 Home
               </a></li>
-              <li><a href="/quizzes" className="text-gray-600 hover:text-blue-600 transition-colors duration-300 text-base flex items-center group">
-                <span className="w-1 h-1 bg-blue-600 rounded-full mr-2 transform group-hover:scale-150 transition-transform duration-300"></span>
-                Quizzes
-              </a></li>
+              
               <li><a href="https://bistecglobal.com/blog/" className="text-gray-600 hover:text-blue-600 transition-colors duration-300 text-base flex items-center group">
                 <span className="w-1 h-1 bg-blue-600 rounded-full mr-2 transform group-hover:scale-150 transition-transform duration-300"></span>
                 Blog
