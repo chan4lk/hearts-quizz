@@ -4,6 +4,7 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { API_URL } from '../config/env';
 
 import { 
   ArrowBack, 
@@ -27,13 +28,19 @@ const AdminLoginPage = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/auth/login`, loginForm);
+      const response = await axios.post(`${API_URL}/api/auth/login`, loginForm);
       const { token } = response.data;
       localStorage.setItem('token', token);
       navigate('/admin');
     } catch (error) {
       console.error('Login error:', error);
-      setError('Invalid credentials');
+      if (error.response?.status === 404) {
+        setError('Server not found. Please check if the backend is running.');
+      } else if (error.response?.status === 401) {
+        setError('Invalid credentials');
+      } else {
+        setError('An error occurred. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }

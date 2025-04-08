@@ -55,6 +55,35 @@ docker-compose up --build
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:5001
 
+## Login Details
+
+### Admin Accounts
+
+1. Superadmin Account:
+- Username: `Bistec`
+- Password: `Bistec98`
+- Email: `admin@example.com`
+- Role: `superadmin`
+
+2. Regular Admin Account:
+- Username: `newadmin`
+- Password: `admin123`
+- Email: `newadmin@example.com`
+- Role: `admin`
+
+### Account Roles and Permissions
+
+- **Superadmin**: Full access to all features including:
+  - Creating, updating, and deleting admin users
+  - Managing all quizzes
+  - Accessing all admin settings
+  - Viewing and managing all user data
+
+- **Regular Admin**: Limited access to:
+  - Creating and managing their own quizzes
+  - Viewing and updating their own profile
+  - Basic quiz management features
+
 ## Features
 
 - Real-time quiz participation
