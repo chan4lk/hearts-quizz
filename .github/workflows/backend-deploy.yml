@@ -35,7 +35,7 @@ jobs:
         mkdir -p build
         # Copy necessary files
         cp package.json build/
-        cp -r server.js config controllers db middleware models routes utils services build/
+        cp -r server.js controllers db middleware models routes utils services build/
         cd build
         # Install production dependencies
         npm install --production
