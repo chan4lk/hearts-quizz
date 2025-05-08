@@ -20,8 +20,8 @@ const login = async (req, res) => {
 const seedAdmin = async () => {
   try {
     const defaultAdmin = {
-      username: process.env.ADMIN_USERNAME || 'admin',
-      password: process.env.ADMIN_PASSWORD || 'admin123'
+      username: process.env.ADMIN_USERNAME,
+      password: process.env.ADMIN_PASSWORD
     };
 
     const existingAdmin = await Admin.findByUsername(defaultAdmin.username);
